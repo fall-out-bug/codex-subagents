@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -66,6 +66,18 @@ console.log(JSON.stringify({ score }));
 
     const events = await readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "experiments.jsonl"), "utf8");
     expect(events.trim().split("\n")).toHaveLength(2);
+
+    const bestPatch = await readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "best.patch"), "utf8");
+    expect(bestPatch).toContain("+candidate=2");
+    await expect(access(path.join(
+      cwd,
+      ".codex-subagents",
+      "autoresearch",
+      result.id,
+      "candidates",
+      "candidate-2",
+      "patch.diff"
+    ))).resolves.toBeUndefined();
   });
 
   it("exposes an autoresearch CLI command", async () => {

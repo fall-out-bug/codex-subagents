@@ -90,6 +90,12 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
     const resultText = await readFile(runResultPath(options.cwd, run.id), "utf8");
     const result = parseStructuredResult(resultText);
     const metric = await runMetric(executionCwd, options.metricCommand);
+    const patch = await gitDiff(executionCwd);
+    const candidateDir = path.join(dir, "candidates", `candidate-${candidate}`);
+    await mkdir(candidateDir, { recursive: true });
+    await writeFile(path.join(candidateDir, "patch.diff"), patch);
+    await writeFile(path.join(candidateDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
+    await writeFile(path.join(candidateDir, "metric.json"), `${JSON.stringify(metric, null, 2)}\n`);
     const experiment: AutoresearchExperiment = {
       candidate,
       runId: run.id,
@@ -105,6 +111,10 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
   const best = experiments
     .filter((experiment) => experiment.state === "pass")
     .sort((a, b) => b.metric.score - a.metric.score)[0] ?? null;
+  if (best) {
+    const bestPatch = await readFile(path.join(dir, "candidates", `candidate-${best.candidate}`, "patch.diff"), "utf8");
+    await writeFile(path.join(dir, "best.patch"), bestPatch);
+  }
 
   const output: AutoresearchRun = {
     schemaVersion: "autoresearch-run/v1",
@@ -158,4 +168,23 @@ async function runMetric(cwd: string, command: string): Promise<Metric> {
     throw new Error("Metric command must print JSON with numeric score");
   }
   return parsed;
+}
+
+async function gitDiff(cwd: string): Promise<string> {
+  const tracked = await execa("git", ["diff", "--"], {
+    cwd,
+    reject: false
+  });
+  const untracked = await execa("git", ["ls-files", "--others", "--exclude-standard"], {
+    cwd,
+    reject: false
+  });
+  const untrackedDiffs = await Promise.all(untracked.stdout.split("\n").filter(Boolean).map(async (file) => {
+    const result = await execa("git", ["diff", "--no-index", "--", "/dev/null", file], {
+      cwd,
+      reject: false
+    });
+    return result.stdout;
+  }));
+  return [tracked.stdout, ...untrackedDiffs].filter(Boolean).join("\n");
 }
