@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 import { Command } from "commander";
+import { runAutoresearch } from "./autoresearch.js";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
@@ -211,6 +212,49 @@ panel
   .option("--structured", "Parse every child result as subagent-result/v1 JSON")
   .action(async (id: string, options: { cwd: string; structured?: boolean }) => {
     console.log(JSON.stringify(await readPanelResults(options.cwd, id, options.structured ?? false), null, 2));
+  });
+
+const autoresearch = program
+  .command("autoresearch")
+  .description("Run bounded self-improving experiment loops");
+
+autoresearch
+  .command("run")
+  .argument("<runtime>", "pi, opencode, or gsd2")
+  .requiredOption("--program <path>", "Research program markdown file")
+  .requiredOption("--metric <command>", "Metric command; must print JSON with numeric score")
+  .option("--candidates <number>", "Number of candidates to try", "3")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--timeout <seconds>", "Timeout in seconds per candidate", "900")
+  .option("--profile <name>", "Runtime profile")
+  .option("--model <id>", "Model override")
+  .action(async (runtimeInput: string, options: {
+    program: string;
+    metric: string;
+    candidates: string;
+    cwd: string;
+    timeout: string;
+    profile?: string;
+    model?: string;
+  }) => {
+    const timeoutSeconds = Number(options.timeout);
+    const candidates = Number(options.candidates);
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+      throw new Error("--timeout must be a positive number of seconds");
+    }
+    if (!Number.isInteger(candidates) || candidates <= 0) {
+      throw new Error("--candidates must be a positive integer");
+    }
+    console.log(JSON.stringify(await runAutoresearch({
+      runtime: RuntimeSchema.parse(runtimeInput),
+      cwd: options.cwd,
+      programPath: options.program,
+      metricCommand: options.metric,
+      candidates,
+      timeoutMs: Math.round(timeoutSeconds * 1000),
+      profile: options.profile,
+      model: options.model
+    }), null, 2));
   });
 
 program

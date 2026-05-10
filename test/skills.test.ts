@@ -40,6 +40,7 @@ describe("packaged skills", () => {
     expect(review).toContain("codex-subagent panel results <panel-id> --structured");
     expect(council).toContain("codex-subagent panel run");
     expect(dev).toContain("--role-template worker");
+    expect(research).toContain("codex-subagent autoresearch run");
     expect(research).toContain("--role-template researcher");
     expect(`${review}\n${council}\n${dev}\n${research}`).toContain("subagent-result/v1");
   });

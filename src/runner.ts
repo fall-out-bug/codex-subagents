@@ -19,6 +19,7 @@ export type RunOptions = {
   timeoutMs: number;
   pathPrefix?: string;
   isolate?: IsolationMode;
+  executionCwd?: string;
 };
 
 export async function runSubagent(options: RunOptions): Promise<{ id: string; statusPath: string }> {
@@ -160,7 +161,7 @@ export async function cancelRun(cwd: string, id: string): Promise<Awaited<Return
 
 async function buildRequest(options: RunOptions): Promise<RunRequest> {
   const id = `run_${nanoid(10)}`;
-  const executionCwd = await prepareExecutionCwd({
+  const executionCwd = options.executionCwd ?? await prepareExecutionCwd({
     cwd: options.cwd,
     id,
     isolate: options.isolate

@@ -22,6 +22,17 @@ For context and role details, read `../references/context-and-roles.md` when nee
 
 ## Research Loop
 
+Prefer the native autoresearch command when there is a metric command and candidate budget:
+
+```bash
+codex-subagent autoresearch run pi \
+  --program program.md \
+  --metric "<command that prints JSON with numeric score>" \
+  --candidates 5
+```
+
+Use this mode only when a higher-is-better metric is defined. Each candidate runs in an isolated worktree and writes `experiments.jsonl` plus `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+
 1. Write a short research brief:
    - question
    - hypothesis
@@ -64,6 +75,20 @@ codex-subagent result <run-id> --structured
    - metric before/after
    - failure mode
    - next experiment
+
+## Program File
+
+Keep `program.md` short and operational:
+
+- question
+- hypothesis
+- metric and baseline
+- allowed files or commands
+- candidate budget
+- stop condition
+- keep/revert policy
+
+Do not let research agents edit `program.md`, skills, publishing config, or production code outside the explicit experiment scope unless the user converts the research into implementation work.
 
 ## Output
 

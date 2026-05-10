@@ -93,6 +93,19 @@ codex-subagent panel results <panel-id> --structured
 
 Use the `summary` object first. It reports panel status, structured/unstructured result counts, finding severity counts, and evidence gaps before the per-role payloads.
 
+## Autoresearch
+
+Use autoresearch when there is a bounded candidate budget and a metric command:
+
+```bash
+codex-subagent autoresearch run pi \
+  --program program.md \
+  --metric "node metric.mjs" \
+  --candidates 5
+```
+
+The metric command must print JSON with a numeric `score`; higher is better. Treat absent, failing, or gameable metrics as `not_assessed` and do not keep candidate changes as proven.
+
 ## Launch Pattern
 
 ```bash

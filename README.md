@@ -104,6 +104,17 @@ codex-subagent panel status <panel-id>
 codex-subagent panel results <panel-id> --structured
 ```
 
+Run a bounded autoresearch loop:
+
+```bash
+codex-subagent autoresearch run pi \
+  --program program.md \
+  --metric "npm run metric" \
+  --candidates 5
+```
+
+The metric command must print JSON with a numeric `score`; higher is better. Each candidate runs in an isolated git worktree. The run writes `program.md`, `experiments.jsonl`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+
 Inspect runs:
 
 ```bash
