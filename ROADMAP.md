@@ -27,3 +27,9 @@
 - Codex skill wrapper
 - Parallel fan-out helpers
 - Merge/adjudication helpers for reviewer panels
+
+## v0.5
+
+- Installable skill package
+- Built-in role-card templates
+- Panel and council orchestration commands

@@ -111,6 +111,17 @@ When `--isolate worktree` is used, the run also creates `.codex-subagents/worktr
 
 `role-card/v1` defines the agent role contract: plane, mission, authority, veto domain, forbidden actions, output schema, and model policy.
 
+## Skills
+
+Reusable workflow skills live in `skills/`:
+
+- `skills/subagent-review` — multi-plane review with independent roles.
+- `skills/subagent-council` — advisory deliberation and disagreement mapping.
+- `skills/subagent-dev` — explorer/planner/worker/tester/reviewer flows with worktree isolation.
+- `skills/subagent-research` — autoresearch-style experiment loops.
+
+Each skill is intentionally thin. It uses `codex-subagent` for execution, context packs, role cards, logs, events, and inspection.
+
 ## Current Scope
 
 This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, git worktree isolation, typed context packs, and role cards. The next useful step is structured result parsing.
