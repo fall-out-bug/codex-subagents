@@ -148,10 +148,17 @@ export async function readAutoresearchPatch(cwd: string, id: string): Promise<st
   return readFile(path.join(autoresearchRunDir(cwd, id), "best.patch"), "utf8");
 }
 
-export async function applyBestPatch(cwd: string, id: string): Promise<{ id: string; candidate: number }> {
+export async function applyBestPatch(
+  cwd: string,
+  id: string,
+  options: { force?: boolean } = {}
+): Promise<{ id: string; candidate: number }> {
   const run = await readAutoresearchRun(cwd, id);
   if (!run.best) {
     throw new Error(`Autoresearch run ${id} has no best candidate`);
+  }
+  if (!options.force && await isDirty(cwd)) {
+    throw new Error("Cannot apply best patch because the worktree is dirty. Commit, stash, or use --force.");
   }
   const patch = await readAutoresearchPatch(cwd, id);
   const result = await execa("git", ["apply", "-"], {
@@ -163,6 +170,17 @@ export async function applyBestPatch(cwd: string, id: string): Promise<{ id: str
     throw new Error(result.stderr || "git apply failed");
   }
   return { id, candidate: run.best.candidate };
+}
+
+async function isDirty(cwd: string): Promise<boolean> {
+  const result = await execa("git", ["status", "--porcelain"], {
+    cwd,
+    reject: false
+  });
+  return result.stdout
+    .split("\n")
+    .filter(Boolean)
+    .some((line) => !line.slice(3).startsWith(".codex-subagents/"));
 }
 
 function renderCandidateTask(input: {

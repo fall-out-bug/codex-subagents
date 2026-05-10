@@ -48,6 +48,9 @@ console.log(JSON.stringify({ score }));
       "Metric: higher score wins.",
       "Allowed files: score.txt."
     ].join("\n"));
+    await execFileAsync("git", ["add", "program.md", "metric.mjs"], { cwd });
+    await execFileAsync("git", ["add", "bin/pi"], { cwd });
+    await execFileAsync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add research inputs"], { cwd });
 
     const result = await runAutoresearch({
       cwd,
@@ -90,6 +93,41 @@ console.log(JSON.stringify({ score }));
 
     await applyBestPatch(cwd, result.id);
     await expect(readFile(path.join(cwd, "score.txt"), "utf8")).resolves.toContain("candidate=2");
+  });
+
+  it("refuses to apply best patch over dirty worktree unless forced", async () => {
+    const cwd = await tempGitProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+echo "candidate=2" > score.txt
+echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","findings":[],"evidence":["score.txt"],"nextActions":[]}'
+`);
+    const metricPath = path.join(cwd, "metric.mjs");
+    await writeFile(metricPath, `
+import { readFileSync } from "node:fs";
+const raw = readFileSync("score.txt", "utf8");
+console.log(JSON.stringify({ score: raw.includes("candidate=2") ? 2 : 0 }));
+`);
+    const programPath = path.join(cwd, "program.md");
+    await writeFile(programPath, "Question: test dirty guard.\n");
+    await execFileAsync("git", ["add", "program.md", "metric.mjs"], { cwd });
+    await execFileAsync("git", ["add", "bin/pi"], { cwd });
+    await execFileAsync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add research inputs"], { cwd });
+
+    const result = await runAutoresearch({
+      cwd,
+      runtime: "pi",
+      programPath,
+      metricCommand: `node ${metricPath}`,
+      candidates: 1,
+      timeoutMs: 10_000,
+      pathPrefix: fakeBin
+    });
+
+    await writeFile(path.join(cwd, "local.txt"), "local change\n");
+    await expect(applyBestPatch(cwd, result.id)).rejects.toThrow("worktree is dirty");
+    await expect(applyBestPatch(cwd, result.id, { force: true })).resolves.toMatchObject({
+      candidate: 1
+    });
   });
 
   it("exposes an autoresearch CLI command", async () => {
@@ -147,6 +185,9 @@ console.log(JSON.stringify({ score: raw.includes("candidate=2") ? 2 : 0 }));
 `);
     const programPath = path.join(cwd, "program.md");
     await writeFile(programPath, "Question: test apply-best.\n");
+    await execFileAsync("git", ["add", "program.md", "metric.mjs"], { cwd });
+    await execFileAsync("git", ["add", "bin/pi"], { cwd });
+    await execFileAsync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add research inputs"], { cwd });
 
     const output = await execFileAsync(
       "node",

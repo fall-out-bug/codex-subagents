@@ -299,8 +299,9 @@ autoresearch
   .command("apply-best")
   .argument("<id>", "Autoresearch run id")
   .option("--cwd <path>", "Working directory", process.cwd())
-  .action(async (id: string, options: { cwd: string }) => {
-    console.log(JSON.stringify(await applyBestPatch(options.cwd, id), null, 2));
+  .option("--force", "Apply even when the worktree is dirty")
+  .action(async (id: string, options: { cwd: string; force?: boolean }) => {
+    console.log(JSON.stringify(await applyBestPatch(options.cwd, id, { force: options.force ?? false }), null, 2));
   });
 
 program

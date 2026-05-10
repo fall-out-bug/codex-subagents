@@ -99,6 +99,8 @@ Apply `best.patch` only after inspecting it:
 codex-subagent autoresearch apply-best <research-id>
 ```
 
+`apply-best` refuses dirty worktrees unless `--force` is used. Do not use `--force` unless the user explicitly accepts applying over local changes.
+
 ## Output
 
 Return:
