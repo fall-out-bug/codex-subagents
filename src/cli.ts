@@ -30,6 +30,7 @@ program
   .option("--task-file <path>", "Read task prompt from a file")
   .option("--context-pack <path>", "Read a context-pack/v1 JSON file")
   .option("--role-card <path>", "Read a role-card/v1 JSON file")
+  .option("--role-template <id>", "Use a built-in role-card template")
   .option("--profile <name>", "Runtime profile, for example readonly or review")
   .option("--agent <name>", "OpenCode agent name")
   .option("--model <id>", "Model override")
@@ -43,7 +44,8 @@ program
       task: options.task,
       taskFile: options.taskFile,
       contextPack: options.contextPack,
-      roleCard: options.roleCard
+      roleCard: options.roleCard,
+      roleTemplate: options.roleTemplate
     });
     const timeoutSeconds = Number(options.timeout);
 
@@ -219,20 +221,33 @@ async function resolveTask(options: {
   taskFile?: string;
   contextPack?: string;
   roleCard?: string;
+  roleTemplate?: string;
 }): Promise<string> {
-  const { task, taskFile, contextPack, roleCard } = options;
+  const { task, taskFile, contextPack, roleCard, roleTemplate } = options;
   if (task && taskFile) {
     throw new Error("Use either --task or --task-file, not both");
   }
 
+  if (roleCard && roleTemplate) {
+    throw new Error("Use either --role-card or --role-template, not both");
+  }
+
+  if (roleTemplate && !contextPack) {
+    throw new Error("--role-template requires --context-pack");
+  }
+
   if ((contextPack || roleCard) && (taskFile || task)) {
-    throw new Error("Use either task/task-file or context-pack/role-card, not both");
+    throw new Error("Use either task/task-file or context-pack/role-card/role-template, not both");
   }
 
   if (contextPack) {
     return renderTaskFromContext({
       contextPack: await readContextPack(contextPack),
-      roleCard: roleCard ? await readRoleCard(roleCard) : undefined
+      roleCard: roleCard
+        ? await readRoleCard(roleCard)
+        : roleTemplate
+          ? getRoleTemplate(roleTemplate)
+          : undefined
     });
   }
 

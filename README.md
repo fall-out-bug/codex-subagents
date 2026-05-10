@@ -76,7 +76,7 @@ codex-subagent role validate security-reviewer.json
 
 codex-subagent run pi \
   --context-pack context.json \
-  --role-card security-reviewer.json
+  --role-template security-reviewer
 ```
 
 Run an OpenCode subagent:

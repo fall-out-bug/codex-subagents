@@ -75,7 +75,6 @@ If the result is free-form text, treat it as `not_assessed` until re-run with th
 
 ```bash
 codex-subagent context build ... --out context.json
-codex-subagent role validate role.json
-codex-subagent run pi --context-pack context.json --role-card role.json
+codex-subagent run pi --context-pack context.json --role-template security-reviewer
 codex-subagent inspect <run-id>
 ```
