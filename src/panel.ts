@@ -36,6 +36,7 @@ export type RunPanelOptions = {
   model?: string;
   timeoutMs: number;
   background?: boolean;
+  pathPrefix?: string;
 };
 
 export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel> {
@@ -46,9 +47,8 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
   const runtime = RuntimeSchema.parse(options.runtime);
   const contextPack = await readContextPack(options.contextPackPath);
   const id = `panel_${nanoid(10)}`;
-  const runs: PanelRun[] = [];
 
-  for (const roleId of options.roleIds) {
+  const runs = await Promise.all(options.roleIds.map(async (roleId) => {
     const roleCard = getRoleTemplate(roleId);
     const task = [
       `Panel: ${id}`,
@@ -65,7 +65,8 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
           profile: options.profile,
           agent: options.agent,
           model: options.model,
-          timeoutMs: options.timeoutMs
+          timeoutMs: options.timeoutMs,
+          pathPrefix: options.pathPrefix
         })
       : await runSubagent({
           runtime,
@@ -74,16 +75,17 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
           profile: options.profile,
           agent: options.agent,
           model: options.model,
-          timeoutMs: options.timeoutMs
+          timeoutMs: options.timeoutMs,
+          pathPrefix: options.pathPrefix
         });
     const status = await readStatus(options.cwd, result.id);
-    runs.push({
+    return {
       roleId,
       runId: result.id,
       state: status.state,
       statusPath: result.statusPath
-    });
-  }
+    };
+  }));
 
   const panel: SubagentPanel = {
     schemaVersion: "subagent-panel/v1",

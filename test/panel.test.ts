@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
+import { runPanel } from "../src/panel.js";
 
 const execFileAsync = promisify(execFile);
 const tempRoots: string[] = [];
@@ -175,6 +176,39 @@ fi
     expect(parsedResults.summary.structured).toEqual({ total: 2, parsed: 1, unstructured: 1 });
     expect(parsedResults.summary.severityCounts).toEqual({ critical: 1, major: 0, minor: 0 });
     expect(parsedResults.summary.evidenceGaps).toContain("code-reviewer");
+  });
+
+  it("runs synchronous panel roles concurrently", async () => {
+    const cwd = await tempProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+sleep 0.6
+echo "done"
+`);
+    const contextPath = path.join(cwd, "context.json");
+    await writeFile(contextPath, JSON.stringify({
+      schemaVersion: "context-pack/v1",
+      subject: "PR review",
+      mode: "review",
+      goal: "Find blockers",
+      nonGoals: [],
+      cwd,
+      createdAt: "2026-05-10T00:00:00.000Z",
+      artifacts: [],
+      budget: { maxBytes: 1000, bytesUsed: 0, omitted: [] },
+      trust: { untrustedArtifactKinds: ["diff"], writeAllowed: false }
+    }));
+
+    const startedAt = Date.now();
+    await runPanel({
+      runtime: "pi",
+      cwd,
+      contextPackPath: contextPath,
+      roleIds: ["security-reviewer", "code-reviewer"],
+      timeoutMs: 10_000,
+      pathPrefix: fakeBin
+    });
+
+    expect(Date.now() - startedAt).toBeLessThan(1000);
   });
 
   it("refreshes child run states when reading panel status", async () => {
