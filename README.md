@@ -27,6 +27,14 @@ npm run build
 npm link
 ```
 
+For local Codex skill integration:
+
+```bash
+./scripts/install-local-codex.sh
+```
+
+Detailed agent installation instructions: [`docs/AGENT_INSTALL.md`](docs/AGENT_INSTALL.md).
+
 ## Usage
 
 Run a `pi` subagent:
