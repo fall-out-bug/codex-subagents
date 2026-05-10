@@ -10,6 +10,7 @@
 
 - Background execution with PID tracking
 - `cancel` command
+- Structured `events.jsonl`
 - Structured result parser with `pass`, `fail`, `partial`, and `not_assessed`
 - Safer timeout and signal handling
 

@@ -58,6 +58,7 @@ Inspect runs:
 ```bash
 codex-subagent list
 codex-subagent status <run-id>
+codex-subagent events <run-id>
 codex-subagent result <run-id>
 codex-subagent cancel <run-id>
 ```
@@ -72,8 +73,9 @@ status.json
 stdout.log
 stderr.log
 result.md
+events.jsonl
 ```
 
 ## Current Scope
 
-This is a bootstrap release. It supports synchronous and background execution. The next useful step is worktree isolation for write-capable agents and structured result parsing.
+This is a bootstrap release. It supports synchronous and background execution with structured JSONL events. The next useful step is worktree isolation for write-capable agents and structured result parsing.

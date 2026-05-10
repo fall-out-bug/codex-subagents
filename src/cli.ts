@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import process from "node:process";
 import { Command } from "commander";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
+import { readEvents } from "./events.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { RuntimeSchema } from "./types.js";
 
@@ -64,6 +65,14 @@ program
   .action(async (id: string, options: { cwd: string }) => {
     const status = await readStatus(options.cwd, id);
     console.log(await readFile(status.resultPath, "utf8"));
+  });
+
+program
+  .command("events")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await readEvents(options.cwd, id), null, 2));
   });
 
 program

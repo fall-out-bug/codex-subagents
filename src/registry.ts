@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { appendEvent } from "./events.js";
 import { runDir, runsRoot } from "./paths.js";
 import { RequestSchema, StatusSchema, type RunRequest, type RunStatus } from "./types.js";
 
@@ -19,6 +20,18 @@ export async function createRunFiles(request: RunRequest): Promise<string> {
     resultPath: path.join(dir, "result.md"),
     error: null
   } satisfies RunStatus);
+  await appendEvent(request.cwd, request.id, {
+    type: "run.created",
+    message: `Created ${request.runtime} run`,
+    data: {
+      runtime: request.runtime,
+      profile: request.profile,
+      agent: request.agent,
+      model: request.model,
+      cwd: request.cwd,
+      timeoutMs: request.timeoutMs
+    }
+  });
   return dir;
 }
 

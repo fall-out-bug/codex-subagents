@@ -4,6 +4,7 @@ import { execa } from "execa";
 import { spawn } from "node:child_process";
 import { nanoid } from "nanoid";
 import { adapterFor } from "./adapters.js";
+import { appendEvent } from "./events.js";
 import { createRunFiles, readStatus, updateStatus } from "./registry.js";
 import type { RunRequest, RuntimeName } from "./types.js";
 
@@ -44,9 +45,14 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
   let errorMessage: string | null = null;
 
   try {
+    await appendEvent(request.cwd, request.id, {
+      type: "process.started",
+      message: `Started ${command.command}`,
+      data: { command: command.command, args: command.args }
+    });
     const result = await execa(command.command, command.args, {
       cwd: request.cwd,
-      env: command.env,
+      env: envFor(command.env, options.pathPrefix),
       timeout: request.timeoutMs,
       reject: false,
       all: false
@@ -55,9 +61,19 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
     stdout = result.stdout;
     stderr = result.stderr;
     exitCode = result.exitCode ?? null;
+    await appendEvent(request.cwd, request.id, {
+      type: "process.finished",
+      message: `Finished ${command.command}`,
+      data: { exitCode }
+    });
   } catch (error) {
     errorMessage = error instanceof Error ? error.message : String(error);
     exitCode = 1;
+    await appendEvent(request.cwd, request.id, {
+      type: "process.failed",
+      message: `Failed ${command.command}`,
+      data: { error: errorMessage }
+    });
   }
 
   await writeFile(stdoutPath, stdout);
@@ -91,6 +107,8 @@ export async function startSubagent(options: RunOptions): Promise<{ id: string; 
     stderrPath: path.join(dir, "stderr.log"),
     resultPath: path.join(dir, "result.md"),
     statusPath: path.join(dir, "status.json"),
+    eventsPath: path.join(dir, "events.jsonl"),
+    runId: request.id,
     timeoutMs: request.timeoutMs
   }));
 
@@ -105,6 +123,11 @@ export async function startSubagent(options: RunOptions): Promise<{ id: string; 
 
   const statusPath = path.join(dir, "status.json");
   const previous = await readStatus(request.cwd, request.id);
+  await appendEvent(request.cwd, request.id, {
+    type: "monitor.started",
+    message: "Started background monitor",
+    data: { pid: child.pid ?? null, command: command.command, args: command.args }
+  });
   await updateStatus(request.cwd, {
     ...previous,
     pid: child.pid ?? null,
@@ -179,6 +202,8 @@ function monitorScript(config: {
   stderrPath: string;
   resultPath: string;
   statusPath: string;
+  eventsPath: string;
+  runId: string;
   timeoutMs: number;
 }): string {
   return `import { spawn } from "node:child_process";
@@ -195,6 +220,16 @@ function readStatus() {
 function writeStatus(patch) {
   const current = readStatus();
   writeFileSync(config.statusPath, JSON.stringify({ ...current, ...patch }, null, 2) + "\\n");
+}
+
+function appendEvent(type, message, data = {}) {
+  writeFileSync(config.eventsPath, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    runId: config.runId,
+    type,
+    message,
+    data
+  }) + "\\n", { flag: "a" });
 }
 
 function normalizeResult(stdout, stderr) {
@@ -227,6 +262,7 @@ function safeRead(file) {
 }
 
 process.on("SIGTERM", () => {
+  appendEvent("process.cancelled", "Received cancellation signal");
   if (child?.pid) {
     try {
       process.kill(-child.pid, "SIGTERM");
@@ -241,6 +277,7 @@ process.on("SIGTERM", () => {
 const stdout = createWriteStream(config.stdoutPath, { flags: "a" });
 const stderr = createWriteStream(config.stderrPath, { flags: "a" });
 const timeout = setTimeout(() => {
+  appendEvent("process.timeout", "Process timed out", { timeoutMs: config.timeoutMs });
   if (child?.pid) {
     try {
       process.kill(-child.pid, "SIGTERM");
@@ -258,6 +295,7 @@ child = spawn(config.command, config.args, {
   detached: true,
   stdio: ["ignore", "pipe", "pipe"]
 });
+appendEvent("process.started", "Started " + config.command, { command: config.command, args: config.args, pid: child.pid });
 
 child.stdout.pipe(stdout);
 child.stderr.pipe(stderr);
@@ -265,12 +303,14 @@ child.stderr.pipe(stderr);
 child.once("error", (error) => {
   clearTimeout(timeout);
   stderr.write(String(error?.message || error));
+  appendEvent("process.failed", "Failed " + config.command, { error: String(error?.message || error) });
   finish("fail", 1, String(error?.message || error));
   process.exit(1);
 });
 
 child.once("exit", (exitCode) => {
   clearTimeout(timeout);
+  appendEvent("process.finished", "Finished " + config.command, { exitCode });
   stdout.end(() => {
     stderr.end(() => {
       finish(exitCode === 0 ? "pass" : "fail", exitCode);

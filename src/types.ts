@@ -50,3 +50,12 @@ export type RuntimeAdapter = {
   name: RuntimeName;
   buildCommand(request: RunRequest): LaunchCommand;
 };
+
+export const RunEventSchema = z.object({
+  timestamp: z.string(),
+  runId: z.string(),
+  type: z.string(),
+  message: z.string(),
+  data: z.record(z.string(), z.unknown()).optional()
+});
+export type RunEvent = z.infer<typeof RunEventSchema>;
