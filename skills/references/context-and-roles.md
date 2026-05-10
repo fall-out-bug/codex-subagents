@@ -91,6 +91,8 @@ Aggregate structured child results with:
 codex-subagent panel results <panel-id> --structured
 ```
 
+Use the `summary` object first. It reports panel status, structured/unstructured result counts, finding severity counts, and evidence gaps before the per-role payloads.
+
 ## Launch Pattern
 
 ```bash

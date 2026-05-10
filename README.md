@@ -133,7 +133,7 @@ events.jsonl
 When `--isolate worktree` is used, the run also creates `.codex-subagents/worktrees/<run-id>/` and executes the agent there. The source repository keeps the run registry.
 
 Panels are stored under `.codex-subagents/panels/<panel-id>.json` and reference the child run ids for each role.
-Use `panel results <panel-id> --structured` to aggregate child `subagent-result/v1` outputs.
+Use `panel results <panel-id> --structured` to aggregate child `subagent-result/v1` outputs with summary status, structured/unstructured counts, finding severity counts, and evidence gaps.
 
 ## Context Packs
 

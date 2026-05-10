@@ -90,10 +90,91 @@ JSON
       { cwd: process.cwd() }
     );
     const parsedResults = JSON.parse(results.stdout);
+    expect(parsedResults.summary.status).toBe("pass");
+    expect(parsedResults.summary.structured).toEqual({ total: 2, parsed: 2, unstructured: 0 });
+    expect(parsedResults.summary.severityCounts).toEqual({ critical: 0, major: 0, minor: 0 });
+    expect(parsedResults.summary.evidenceGaps).toEqual([]);
     expect(parsedResults.runs.map((run: { result: { summary: string } }) => run.result.summary)).toEqual([
       "security-reviewer ok",
       "code-reviewer ok"
     ]);
+  });
+
+  it("summarizes panel result gaps and finding severities", async () => {
+    const cwd = await tempProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+if [[ "$*" == *"Role: security-reviewer"* ]]; then
+  cat <<JSON
+{
+  "schemaVersion": "subagent-result/v1",
+  "status": "partial",
+  "summary": "security issue",
+  "findings": [
+    {
+      "severity": "critical",
+      "title": "Unsafe command",
+      "body": "Command input is trusted.",
+      "evidence": ["src/runner.ts"]
+    }
+  ],
+  "evidence": ["src/runner.ts"],
+  "nextActions": ["Fix command boundary"]
+}
+JSON
+else
+  echo "free-form answer"
+fi
+`);
+    const contextPath = path.join(cwd, "context.json");
+    await writeFile(contextPath, JSON.stringify({
+      schemaVersion: "context-pack/v1",
+      subject: "PR review",
+      mode: "review",
+      goal: "Find blockers",
+      nonGoals: [],
+      cwd,
+      createdAt: "2026-05-10T00:00:00.000Z",
+      artifacts: [],
+      budget: { maxBytes: 1000, bytesUsed: 0, omitted: [] },
+      trust: { untrustedArtifactKinds: ["diff"], writeAllowed: false }
+    }));
+
+    const output = await execFileAsync(
+      "node",
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "panel",
+        "run",
+        "pi",
+        "--cwd",
+        cwd,
+        "--context-pack",
+        contextPath,
+        "--role",
+        "security-reviewer",
+        "--role",
+        "code-reviewer"
+      ],
+      {
+        cwd: process.cwd(),
+        env: { ...process.env, PATH: `${fakeBin}:${process.env.PATH ?? ""}` }
+      }
+    );
+
+    const panel = JSON.parse(output.stdout);
+    const results = await execFileAsync(
+      "node",
+      ["--import", "tsx", "src/cli.ts", "panel", "results", panel.id, "--structured", "--cwd", cwd],
+      { cwd: process.cwd() }
+    );
+    const parsedResults = JSON.parse(results.stdout);
+
+    expect(parsedResults.summary.status).toBe("partial");
+    expect(parsedResults.summary.structured).toEqual({ total: 2, parsed: 1, unstructured: 1 });
+    expect(parsedResults.summary.severityCounts).toEqual({ critical: 1, major: 0, minor: 0 });
+    expect(parsedResults.summary.evidenceGaps).toContain("code-reviewer");
   });
 
   it("refreshes child run states when reading panel status", async () => {

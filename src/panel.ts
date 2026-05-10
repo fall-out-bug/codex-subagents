@@ -7,7 +7,7 @@ import { readStatus } from "./registry.js";
 import { parseStructuredResult } from "./results.js";
 import { runSubagent, startSubagent } from "./runner.js";
 import { getRoleTemplate } from "./roles.js";
-import { RuntimeSchema, type RuntimeName } from "./types.js";
+import { RuntimeSchema, type RuntimeName, type StructuredResult } from "./types.js";
 
 export type PanelRun = {
   roleId: string;
@@ -120,6 +120,12 @@ export async function readPanelResults(cwd: string, id: string, structured: bool
     schemaVersion: "subagent-panel-results/v1",
     id: panel.id,
     runtime: panel.runtime,
+    summary: structured ? summarizeStructuredPanel(runs as Array<{
+      roleId: string;
+      runId: string;
+      state: string;
+      result: StructuredResult;
+    }>) : undefined,
     runs
   };
 }
@@ -148,4 +154,57 @@ async function refreshPanel(cwd: string, panel: SubagentPanel): Promise<Subagent
 
 function panelPath(cwd: string, id: string): string {
   return path.join(panelsRoot(cwd), `${id}.json`);
+}
+
+function summarizeStructuredPanel(runs: Array<{
+  roleId: string;
+  state: string;
+  result: StructuredResult;
+}>): unknown {
+  const severityCounts = { critical: 0, major: 0, minor: 0 };
+  const evidenceGaps: string[] = [];
+  let parsed = 0;
+  let hasFail = false;
+  let hasPartial = false;
+
+  for (const run of runs) {
+    if (run.result.structured) {
+      parsed += 1;
+    } else {
+      evidenceGaps.push(run.roleId);
+    }
+
+    if (run.result.evidence.length === 0) {
+      evidenceGaps.push(run.roleId);
+    }
+
+    for (const finding of run.result.findings) {
+      severityCounts[finding.severity] += 1;
+    }
+
+    if (run.state === "fail" || run.result.status === "fail") {
+      hasFail = true;
+    }
+
+    if (
+      run.state === "partial" ||
+      run.state === "not_assessed" ||
+      run.result.status === "partial" ||
+      run.result.status === "not_assessed" ||
+      !run.result.structured
+    ) {
+      hasPartial = true;
+    }
+  }
+
+  return {
+    status: hasFail ? "fail" : hasPartial ? "partial" : "pass",
+    structured: {
+      total: runs.length,
+      parsed,
+      unstructured: runs.length - parsed
+    },
+    severityCounts,
+    evidenceGaps: [...new Set(evidenceGaps)]
+  };
 }
