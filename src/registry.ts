@@ -29,6 +29,7 @@ export async function createRunFiles(request: RunRequest): Promise<string> {
       agent: request.agent,
       model: request.model,
       cwd: request.cwd,
+      executionCwd: request.executionCwd,
       timeoutMs: request.timeoutMs
     }
   });

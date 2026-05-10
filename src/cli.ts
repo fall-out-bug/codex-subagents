@@ -3,6 +3,7 @@ import process from "node:process";
 import { Command } from "commander";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
+import type { IsolationMode } from "./isolation.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { RuntimeSchema } from "./types.js";
 
@@ -24,6 +25,7 @@ program
   .option("--cwd <path>", "Working directory", process.cwd())
   .option("--timeout <seconds>", "Timeout in seconds", "900")
   .option("--background", "Start the subagent in the background")
+  .option("--isolate <mode>", "Isolation mode: worktree or none", "none")
   .action(async (runtimeInput: string, options: Record<string, string | undefined>) => {
     const runtime = RuntimeSchema.parse(runtimeInput);
     const task = await resolveTask(options.task, options.taskFile);
@@ -33,6 +35,7 @@ program
       throw new Error("--timeout must be a positive number of seconds");
     }
 
+    const isolate: IsolationMode = options.isolate === "worktree" ? "worktree" : "none";
     const runOptions = {
       runtime,
       cwd: options.cwd ?? process.cwd(),
@@ -40,7 +43,8 @@ program
       profile: options.profile,
       agent: options.agent,
       model: options.model,
-      timeoutMs: Math.round(timeoutSeconds * 1000)
+      timeoutMs: Math.round(timeoutSeconds * 1000),
+      isolate
     };
 
     const result = options.background

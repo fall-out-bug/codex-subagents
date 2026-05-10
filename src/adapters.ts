@@ -1,5 +1,9 @@
 import type { LaunchCommand, RunRequest, RuntimeAdapter, RuntimeName } from "./types.js";
 
+function effectiveCwd(request: RunRequest): string {
+  return request.executionCwd ?? request.cwd;
+}
+
 function piToolsForProfile(profile?: string): string[] | undefined {
   if (profile === "readonly" || profile === "review" || profile === "explore") {
     return ["read", "grep", "find", "ls"];
@@ -30,7 +34,7 @@ export const piAdapter: RuntimeAdapter = {
 export const opencodeAdapter: RuntimeAdapter = {
   name: "opencode",
   buildCommand(request: RunRequest): LaunchCommand {
-    const args = ["run", "--format", "json", "--dir", request.cwd];
+    const args = ["run", "--format", "json", "--dir", effectiveCwd(request)];
 
     if (request.agent) {
       args.push("--agent", request.agent);

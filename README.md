@@ -41,6 +41,12 @@ Run it in the background:
 codex-subagent run pi --background --profile readonly --task "Review src for risky file writes"
 ```
 
+Run a write-capable agent in an isolated git worktree:
+
+```bash
+codex-subagent run opencode --isolate worktree --agent build --task "Implement the parser"
+```
+
 Run an OpenCode subagent:
 
 ```bash
@@ -76,6 +82,8 @@ result.md
 events.jsonl
 ```
 
+When `--isolate worktree` is used, the run also creates `.codex-subagents/worktrees/<run-id>/` and executes the agent there. The source repository keeps the run registry.
+
 ## Current Scope
 
-This is a bootstrap release. It supports synchronous and background execution with structured JSONL events. The next useful step is worktree isolation for write-capable agents and structured result parsing.
+This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, and git worktree isolation. The next useful step is structured result parsing.

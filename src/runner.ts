@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 import { nanoid } from "nanoid";
 import { adapterFor } from "./adapters.js";
 import { appendEvent } from "./events.js";
+import { prepareExecutionCwd, type IsolationMode } from "./isolation.js";
 import { createRunFiles, readStatus, updateStatus } from "./registry.js";
 import type { RunRequest, RuntimeName } from "./types.js";
 
@@ -17,20 +18,11 @@ export type RunOptions = {
   model?: string;
   timeoutMs: number;
   pathPrefix?: string;
+  isolate?: IsolationMode;
 };
 
 export async function runSubagent(options: RunOptions): Promise<{ id: string; statusPath: string }> {
-  const request: RunRequest = {
-    id: nanoid(10),
-    runtime: options.runtime,
-    cwd: options.cwd,
-    task: options.task,
-    profile: options.profile,
-    agent: options.agent,
-    model: options.model,
-    timeoutMs: options.timeoutMs,
-    createdAt: new Date().toISOString()
-  };
+  const request = await buildRequest(options);
 
   const dir = await createRunFiles(request);
   const command = adapterFor(request.runtime).buildCommand(request);
@@ -51,7 +43,7 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
       data: { command: command.command, args: command.args }
     });
     const result = await execa(command.command, command.args, {
-      cwd: request.cwd,
+      cwd: request.executionCwd ?? request.cwd,
       env: envFor(command.env, options.pathPrefix),
       timeout: request.timeoutMs,
       reject: false,
@@ -93,7 +85,7 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
 }
 
 export async function startSubagent(options: RunOptions): Promise<{ id: string; statusPath: string }> {
-  const request = buildRequest(options);
+  const request = await buildRequest(options);
   const dir = await createRunFiles(request);
   const command = adapterFor(request.runtime).buildCommand(request);
   const monitorPath = path.join(dir, "monitor.mjs");
@@ -101,7 +93,7 @@ export async function startSubagent(options: RunOptions): Promise<{ id: string; 
   await writeFile(monitorPath, monitorScript({
     command: command.command,
     args: command.args,
-    cwd: request.cwd,
+    cwd: request.executionCwd ?? request.cwd,
     env: envFor(command.env, options.pathPrefix),
     stdoutPath: path.join(dir, "stdout.log"),
     stderrPath: path.join(dir, "stderr.log"),
@@ -166,11 +158,19 @@ export async function cancelRun(cwd: string, id: string): Promise<Awaited<Return
   return updated;
 }
 
-function buildRequest(options: RunOptions): RunRequest {
+async function buildRequest(options: RunOptions): Promise<RunRequest> {
+  const id = nanoid(10);
+  const executionCwd = await prepareExecutionCwd({
+    cwd: options.cwd,
+    id,
+    isolate: options.isolate
+  });
+
   return {
-    id: nanoid(10),
+    id,
     runtime: options.runtime,
     cwd: options.cwd,
+    executionCwd,
     task: options.task,
     profile: options.profile,
     agent: options.agent,

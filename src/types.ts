@@ -17,6 +17,7 @@ export const RequestSchema = z.object({
   id: z.string(),
   runtime: RuntimeSchema,
   cwd: z.string(),
+  executionCwd: z.string().optional(),
   task: z.string(),
   profile: z.string().optional(),
   agent: z.string().optional(),
