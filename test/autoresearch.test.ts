@@ -38,7 +38,7 @@ JSON
     await writeFile(metricPath, `
 import { readFileSync } from "node:fs";
 const raw = readFileSync("score.txt", "utf8");
-const score = raw.includes("candidate=2") ? 2 : 1;
+const score = raw.includes("candidate=2") ? 2 : raw.includes("candidate=1") ? 1 : 0;
 console.log(JSON.stringify({ score }));
 `);
     const programPath = path.join(cwd, "program.md");
@@ -60,12 +60,15 @@ console.log(JSON.stringify({ score }));
     });
 
     expect(result.schemaVersion).toBe("autoresearch-run/v1");
+    expect(result.baseline.score).toBe(0);
     expect(result.experiments).toHaveLength(2);
     expect(result.best?.candidate).toBe(2);
     expect(result.best?.metric.score).toBe(2);
 
     const events = await readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "experiments.jsonl"), "utf8");
     expect(events.trim().split("\n")).toHaveLength(2);
+    const baseline = JSON.parse(await readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "baseline.json"), "utf8"));
+    expect(baseline.score).toBe(0);
 
     const bestPatch = await readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "best.patch"), "utf8");
     expect(bestPatch).toContain("+candidate=2");
@@ -116,8 +119,9 @@ echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","find
     );
 
     const parsed = JSON.parse(output.stdout);
+    expect(parsed.baseline.score).toBe(1);
     expect(parsed.experiments[0]?.state).toBe("pass");
-    expect(parsed.best?.candidate).toBe(1);
+    expect(parsed.best).toBeNull();
   });
 });
 
@@ -126,7 +130,8 @@ async function tempGitProject(): Promise<string> {
   tempRoots.push(root);
   await execFileAsync("git", ["init", "-b", "main"], { cwd: root });
   await writeFile(path.join(root, "README.md"), "# test\n");
-  await execFileAsync("git", ["add", "README.md"], { cwd: root });
+  await writeFile(path.join(root, "score.txt"), "candidate=0\n");
+  await execFileAsync("git", ["add", "README.md", "score.txt"], { cwd: root });
   await execFileAsync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "init"], { cwd: root });
   return root;
 }

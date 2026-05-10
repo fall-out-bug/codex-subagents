@@ -113,7 +113,7 @@ codex-subagent autoresearch run pi \
   --candidates 5
 ```
 
-The metric command must print JSON with a numeric `score`; higher is better. Each candidate runs in an isolated git worktree. The run writes `program.md`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+The metric command must print JSON with a numeric `score`; higher is better. Autoresearch records a baseline before trying candidates and only selects a best candidate when it beats that baseline. Each candidate runs in an isolated git worktree. The run writes `program.md`, `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
 
 Inspect runs:
 

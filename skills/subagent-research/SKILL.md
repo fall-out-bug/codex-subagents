@@ -31,7 +31,7 @@ codex-subagent autoresearch run pi \
   --candidates 5
 ```
 
-Use this mode only when a higher-is-better metric is defined. Each candidate runs in an isolated worktree and writes `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+Use this mode only when a higher-is-better metric is defined. The command records a baseline before trying candidates and selects `best` only when a candidate beats that baseline. Each candidate runs in an isolated worktree and writes `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
 
 1. Write a short research brief:
    - question

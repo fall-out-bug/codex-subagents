@@ -30,6 +30,7 @@ export type AutoresearchRun = {
   metricCommand: string;
   candidates: number;
   createdAt: string;
+  baseline: Metric;
   experiments: AutoresearchExperiment[];
   best: AutoresearchExperiment | null;
 };
@@ -57,6 +58,8 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
   await mkdir(dir, { recursive: true });
   const program = await readFile(options.programPath, "utf8");
   await writeFile(path.join(dir, "program.md"), program);
+  const baseline = await runMetric(options.cwd, options.metricCommand);
+  await writeFile(path.join(dir, "baseline.json"), `${JSON.stringify(baseline, null, 2)}\n`);
 
   const experiments: AutoresearchExperiment[] = [];
 
@@ -110,6 +113,7 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
 
   const best = experiments
     .filter((experiment) => experiment.state === "pass")
+    .filter((experiment) => experiment.metric.score > baseline.score)
     .sort((a, b) => b.metric.score - a.metric.score)[0] ?? null;
   if (best) {
     const bestPatch = await readFile(path.join(dir, "candidates", `candidate-${best.candidate}`, "patch.diff"), "utf8");
@@ -124,6 +128,7 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
     metricCommand: options.metricCommand,
     candidates: options.candidates,
     createdAt: new Date().toISOString(),
+    baseline,
     experiments,
     best
   };
