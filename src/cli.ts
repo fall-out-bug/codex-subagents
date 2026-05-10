@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 import { Command } from "commander";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
@@ -6,20 +6,28 @@ import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
 import { inspectRun, readRunLog, type LogName } from "./inspect.js";
 import { listStatuses, readStatus } from "./registry.js";
-import { RuntimeSchema } from "./types.js";
+import { ContextModeSchema, RuntimeSchema } from "./types.js";
+import {
+  buildContextPack,
+  readContextPack,
+  readRoleCard,
+  renderTaskFromContext
+} from "./context.js";
 
 const program = new Command();
 
 program
   .name("codex-subagent")
   .description("Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.")
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("run")
   .argument("<runtime>", "pi, opencode, or gsd2")
   .option("--task <text>", "Task prompt")
   .option("--task-file <path>", "Read task prompt from a file")
+  .option("--context-pack <path>", "Read a context-pack/v1 JSON file")
+  .option("--role-card <path>", "Read a role-card/v1 JSON file")
   .option("--profile <name>", "Runtime profile, for example readonly or review")
   .option("--agent <name>", "OpenCode agent name")
   .option("--model <id>", "Model override")
@@ -29,7 +37,12 @@ program
   .option("--isolate <mode>", "Isolation mode: worktree or none", "none")
   .action(async (runtimeInput: string, options: Record<string, string | undefined>) => {
     const runtime = RuntimeSchema.parse(runtimeInput);
-    const task = await resolveTask(options.task, options.taskFile);
+    const task = await resolveTask({
+      task: options.task,
+      taskFile: options.taskFile,
+      contextPack: options.contextPack,
+      roleCard: options.roleCard
+    });
     const timeoutSeconds = Number(options.timeout);
 
     if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
@@ -53,6 +66,62 @@ program
       : await runSubagent(runOptions);
 
     console.log(JSON.stringify(result, null, 2));
+  });
+
+const context = program
+  .command("context")
+  .description("Build and inspect typed context packs");
+
+context
+  .command("build")
+  .requiredOption("--subject <text>", "What this context is about")
+  .requiredOption("--mode <mode>", "review, council, dev, or research")
+  .requiredOption("--goal <text>", "Goal for the subagent")
+  .option("--non-goal <text>", "Non-goal; can be repeated", collect, [])
+  .option("--file <path>", "File to include; can be repeated", collect, [])
+  .option("--rule <path>", "Rule file to include; can be repeated", collect, [])
+  .option("--diff", "Include git diff against HEAD")
+  .option("--write-allowed", "Mark context as write-capable")
+  .option("--max-bytes <number>", "Context byte budget", "524288")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--out <path>", "Write JSON to a file instead of stdout")
+  .action(async (options: {
+    subject: string;
+    mode: string;
+    goal: string;
+    nonGoal: string[];
+    file: string[];
+    rule: string[];
+    diff?: boolean;
+    writeAllowed?: boolean;
+    maxBytes: string;
+    cwd: string;
+    out?: string;
+  }) => {
+    const pack = await buildContextPack({
+      cwd: options.cwd,
+      subject: options.subject,
+      mode: ContextModeSchema.parse(options.mode),
+      goal: options.goal,
+      nonGoals: options.nonGoal,
+      files: options.file,
+      includeDiff: options.diff ?? false,
+      rulePaths: options.rule.length > 0 ? options.rule : undefined,
+      writeAllowed: options.writeAllowed ?? false,
+      maxBytes: Number(options.maxBytes)
+    });
+    await outputJson(pack, options.out);
+  });
+
+const role = program
+  .command("role")
+  .description("Validate role-card/v1 files");
+
+role
+  .command("validate")
+  .argument("<path>", "Role card JSON file")
+  .action(async (filePath: string) => {
+    console.log(JSON.stringify(await readRoleCard(filePath), null, 2));
   });
 
 program
@@ -113,9 +182,26 @@ program
     console.log(JSON.stringify(await listStatuses(options.cwd), null, 2));
   });
 
-async function resolveTask(task?: string, taskFile?: string): Promise<string> {
+async function resolveTask(options: {
+  task?: string;
+  taskFile?: string;
+  contextPack?: string;
+  roleCard?: string;
+}): Promise<string> {
+  const { task, taskFile, contextPack, roleCard } = options;
   if (task && taskFile) {
     throw new Error("Use either --task or --task-file, not both");
+  }
+
+  if ((contextPack || roleCard) && (taskFile || task)) {
+    throw new Error("Use either task/task-file or context-pack/role-card, not both");
+  }
+
+  if (contextPack) {
+    return renderTaskFromContext({
+      contextPack: await readContextPack(contextPack),
+      roleCard: roleCard ? await readRoleCard(roleCard) : undefined
+    });
   }
 
   if (taskFile) {
@@ -127,6 +213,20 @@ async function resolveTask(task?: string, taskFile?: string): Promise<string> {
   }
 
   throw new Error("Provide --task or --task-file");
+}
+
+function collect(value: string, previous: string[]): string[] {
+  previous.push(value);
+  return previous;
+}
+
+async function outputJson(value: unknown, out?: string): Promise<void> {
+  const json = `${JSON.stringify(value, null, 2)}\n`;
+  if (out) {
+    await writeFile(out, json);
+    return;
+  }
+  console.log(json);
 }
 
 await program.parseAsync();

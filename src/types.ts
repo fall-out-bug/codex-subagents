@@ -60,3 +60,55 @@ export const RunEventSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional()
 });
 export type RunEvent = z.infer<typeof RunEventSchema>;
+
+export const ContextModeSchema = z.enum(["review", "council", "dev", "research"]);
+export type ContextMode = z.infer<typeof ContextModeSchema>;
+
+export const ContextArtifactSchema = z.object({
+  kind: z.enum(["file", "rule", "diff", "evidence", "note"]),
+  path: z.string().nullable(),
+  sha256: z.string().optional(),
+  content: z.string(),
+  trusted: z.boolean()
+});
+export type ContextArtifact = z.infer<typeof ContextArtifactSchema>;
+
+export const ContextPackSchema = z.object({
+  schemaVersion: z.literal("context-pack/v1"),
+  subject: z.string(),
+  mode: ContextModeSchema,
+  goal: z.string(),
+  nonGoals: z.array(z.string()),
+  cwd: z.string(),
+  createdAt: z.string(),
+  artifacts: z.array(ContextArtifactSchema),
+  budget: z.object({
+    maxBytes: z.number().int().positive(),
+    bytesUsed: z.number().int().nonnegative(),
+    omitted: z.array(z.string())
+  }),
+  trust: z.object({
+    untrustedArtifactKinds: z.array(z.string()),
+    writeAllowed: z.boolean()
+  })
+});
+export type ContextPack = z.infer<typeof ContextPackSchema>;
+
+export const RoleCardSchema = z.object({
+  schemaVersion: z.literal("role-card/v1"),
+  id: z.string(),
+  plane: z.string(),
+  mission: z.string(),
+  authority: z.enum(["advisory", "executor", "decision_owner"]),
+  canVeto: z.array(z.string()).default([]),
+  mustNot: z.array(z.string()).default([]),
+  outputSchema: z.string(),
+  modelPolicy: z.object({
+    familyDiversity: z.enum(["none", "preferred", "required"]).default("preferred"),
+    allowLocalFallback: z.boolean().default(true)
+  }).default({
+    familyDiversity: "preferred",
+    allowLocalFallback: true
+  })
+});
+export type RoleCard = z.infer<typeof RoleCardSchema>;

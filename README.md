@@ -47,6 +47,25 @@ Run a write-capable agent in an isolated git worktree:
 codex-subagent run opencode --isolate worktree --agent build --task "Implement the parser"
 ```
 
+Build a typed context pack and run a role-bound agent:
+
+```bash
+codex-subagent context build \
+  --subject "PR review" \
+  --mode review \
+  --goal "Find blocking correctness and security issues" \
+  --file src/parser.ts \
+  --rule AGENTS.md \
+  --diff \
+  --out context.json
+
+codex-subagent role validate security-reviewer.json
+
+codex-subagent run pi \
+  --context-pack context.json \
+  --role-card security-reviewer.json
+```
+
 Run an OpenCode subagent:
 
 ```bash
@@ -86,6 +105,12 @@ events.jsonl
 
 When `--isolate worktree` is used, the run also creates `.codex-subagents/worktrees/<run-id>/` and executes the agent there. The source repository keeps the run registry.
 
+## Context Packs
+
+`context-pack/v1` is the portable context envelope used by review panels, councils, development subagents, and research loops. It separates trusted rules from untrusted artifacts such as diffs, logs, evidence, and file contents.
+
+`role-card/v1` defines the agent role contract: plane, mission, authority, veto domain, forbidden actions, output schema, and model policy.
+
 ## Current Scope
 
-This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, and git worktree isolation. The next useful step is structured result parsing.
+This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, git worktree isolation, typed context packs, and role cards. The next useful step is structured result parsing.

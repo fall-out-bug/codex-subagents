@@ -1,6 +1,6 @@
 {
   "name": "codex-subagents",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.",
   "repository": {
     "type": "git",

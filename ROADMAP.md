@@ -17,6 +17,8 @@
 ## v0.3
 
 - Worktree isolation for write-capable agents
+- `context-pack/v1`
+- `role-card/v1`
 - Built-in profiles: `explore`, `review`, `implement`, `evidence`, `gsd2-plan`
 - JSON event streaming for OpenCode
 

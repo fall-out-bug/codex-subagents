@@ -67,8 +67,7 @@ echo "finished"
       pathPrefix: fakeBin
     });
 
-    await wait(1000);
-    const status = await readStatus(cwd, result.id);
+    const status = await waitForStatus(cwd, result.id, "pass");
     expect(status.state).toBe("pass");
     expect(await readFile(status.resultPath, "utf8")).toContain("finished");
   });
@@ -89,6 +88,17 @@ async function fakeRuntime(cwd: string, name: string, script: string): Promise<s
   return bin;
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function waitForStatus(cwd: string, id: string, state: string) {
+  const deadline = Date.now() + 10_000;
+
+  while (Date.now() < deadline) {
+    const status = await readStatus(cwd, id);
+    if (status.state === state) {
+      return status;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  return readStatus(cwd, id);
 }
