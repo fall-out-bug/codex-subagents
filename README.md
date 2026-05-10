@@ -35,6 +35,12 @@ Run a `pi` subagent:
 codex-subagent run pi --profile readonly --task "Review src for risky file writes"
 ```
 
+Run it in the background:
+
+```bash
+codex-subagent run pi --background --profile readonly --task "Review src for risky file writes"
+```
+
 Run an OpenCode subagent:
 
 ```bash
@@ -53,6 +59,7 @@ Inspect runs:
 codex-subagent list
 codex-subagent status <run-id>
 codex-subagent result <run-id>
+codex-subagent cancel <run-id>
 ```
 
 ## Run Directory
@@ -69,4 +76,4 @@ result.md
 
 ## Current Scope
 
-This is a bootstrap release. It runs subagents synchronously and records their outputs. The next useful step is background execution with PID tracking, cancellation, and worktree isolation for write-capable agents.
+This is a bootstrap release. It supports synchronous and background execution. The next useful step is worktree isolation for write-capable agents and structured result parsing.

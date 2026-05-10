@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
 import { Command } from "commander";
-import { runSubagent } from "./runner.js";
+import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { RuntimeSchema } from "./types.js";
 
@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name("codex-subagent")
   .description("Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("run")
@@ -22,6 +22,7 @@ program
   .option("--model <id>", "Model override")
   .option("--cwd <path>", "Working directory", process.cwd())
   .option("--timeout <seconds>", "Timeout in seconds", "900")
+  .option("--background", "Start the subagent in the background")
   .action(async (runtimeInput: string, options: Record<string, string | undefined>) => {
     const runtime = RuntimeSchema.parse(runtimeInput);
     const task = await resolveTask(options.task, options.taskFile);
@@ -31,7 +32,7 @@ program
       throw new Error("--timeout must be a positive number of seconds");
     }
 
-    const result = await runSubagent({
+    const runOptions = {
       runtime,
       cwd: options.cwd ?? process.cwd(),
       task,
@@ -39,7 +40,11 @@ program
       agent: options.agent,
       model: options.model,
       timeoutMs: Math.round(timeoutSeconds * 1000)
-    });
+    };
+
+    const result = options.background
+      ? await startSubagent(runOptions)
+      : await runSubagent(runOptions);
 
     console.log(JSON.stringify(result, null, 2));
   });
@@ -59,6 +64,14 @@ program
   .action(async (id: string, options: { cwd: string }) => {
     const status = await readStatus(options.cwd, id);
     console.log(await readFile(status.resultPath, "utf8"));
+  });
+
+program
+  .command("cancel")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await cancelRun(options.cwd, id), null, 2));
   });
 
 program

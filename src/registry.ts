@@ -12,6 +12,8 @@ export async function createRunFiles(request: RunRequest): Promise<string> {
     runtime: request.runtime,
     state: "running",
     exitCode: null,
+    pid: null,
+    background: false,
     startedAt: new Date().toISOString(),
     finishedAt: null,
     resultPath: path.join(dir, "result.md"),

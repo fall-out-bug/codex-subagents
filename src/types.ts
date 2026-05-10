@@ -3,7 +3,14 @@ import { z } from "zod";
 export const RuntimeSchema = z.enum(["pi", "opencode", "gsd2"]);
 export type RuntimeName = z.infer<typeof RuntimeSchema>;
 
-export const RunStateSchema = z.enum(["running", "pass", "fail", "partial", "not_assessed"]);
+export const RunStateSchema = z.enum([
+  "running",
+  "pass",
+  "fail",
+  "partial",
+  "not_assessed",
+  "cancelled"
+]);
 export type RunState = z.infer<typeof RunStateSchema>;
 
 export const RequestSchema = z.object({
@@ -24,6 +31,8 @@ export const StatusSchema = z.object({
   runtime: RuntimeSchema,
   state: RunStateSchema,
   exitCode: z.number().int().nullable(),
+  pid: z.number().int().positive().nullable().optional(),
+  background: z.boolean().optional(),
   startedAt: z.string(),
   finishedAt: z.string().nullable(),
   resultPath: z.string(),
