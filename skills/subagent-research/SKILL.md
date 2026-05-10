@@ -25,7 +25,7 @@ For context and role details, read `../references/context-and-roles.md` when nee
 Prefer the native autoresearch command when there is a metric command and candidate budget:
 
 ```bash
-codex-subagent autoresearch search \
+codex-subagent autoresearch sources build \
   --query "<research query>" \
   --note "<manual source note or seed finding>" \
   --out sources.json

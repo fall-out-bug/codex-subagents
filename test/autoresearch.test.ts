@@ -338,6 +338,29 @@ echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","find
 
     expect(JSON.parse(output.stdout).schemaVersion).toBe("research-sources/v1");
     expect(JSON.parse(await readFile(out, "utf8")).sources[0].content).toBe("manual source");
+
+    const aliasOut = path.join(cwd, "sources-alias.json");
+    const alias = await execFileAsync(
+      "node",
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "autoresearch",
+        "sources",
+        "build",
+        "--cwd",
+        cwd,
+        "--query",
+        "test query",
+        "--note",
+        "manual source",
+        "--out",
+        aliasOut
+      ],
+      { cwd: process.cwd() }
+    );
+    expect(JSON.parse(alias.stdout).schemaVersion).toBe("research-sources/v1");
   });
 });
 

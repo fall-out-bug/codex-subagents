@@ -107,7 +107,7 @@ codex-subagent panel results <panel-id> --structured
 Run a bounded autoresearch loop:
 
 ```bash
-codex-subagent autoresearch search \
+codex-subagent autoresearch sources build \
   --query "prior art for parser recovery" \
   --note "Include local notes or fetched URLs here" \
   --out sources.json

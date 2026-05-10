@@ -219,6 +219,20 @@ const autoresearch = program
   .command("autoresearch")
   .description("Run bounded self-improving experiment loops");
 
+const sources = autoresearch
+  .command("sources")
+  .description("Build research source packs");
+
+sources
+  .command("build")
+  .requiredOption("--query <text>", "Research query")
+  .option("--url <url>", "URL to fetch into the source pack; can be repeated", collect, [])
+  .option("--file <path>", "Local file to include in the source pack; can be repeated", collect, [])
+  .option("--note <text>", "Manual source note; can be repeated", collect, [])
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .requiredOption("--out <path>", "Write research-sources/v1 JSON")
+  .action(writeSourcePack);
+
 autoresearch
   .command("search")
   .requiredOption("--query <text>", "Research query")
@@ -227,24 +241,8 @@ autoresearch
   .option("--note <text>", "Manual source note; can be repeated", collect, [])
   .option("--cwd <path>", "Working directory", process.cwd())
   .requiredOption("--out <path>", "Write research-sources/v1 JSON")
-  .action(async (options: {
-    query: string;
-    url: string[];
-    file: string[];
-    note: string[];
-    cwd: string;
-    out: string;
-  }) => {
-    const pack = await buildResearchSources({
-      cwd: options.cwd,
-      query: options.query,
-      urls: options.url,
-      files: options.file,
-      notes: options.note
-    });
-    await writeResearchSources(options.out, pack);
-    console.log(JSON.stringify(pack, null, 2));
-  });
+  .description("Shortcut for autoresearch sources build")
+  .action(writeSourcePack);
 
 autoresearch
   .command("run")
@@ -448,6 +446,25 @@ async function resolveTask(options: {
 function collect(value: string, previous: string[]): string[] {
   previous.push(value);
   return previous;
+}
+
+async function writeSourcePack(options: {
+  query: string;
+  url: string[];
+  file: string[];
+  note: string[];
+  cwd: string;
+  out: string;
+}): Promise<void> {
+  const pack = await buildResearchSources({
+    cwd: options.cwd,
+    query: options.query,
+    urls: options.url,
+    files: options.file,
+    notes: options.note
+  });
+  await writeResearchSources(options.out, pack);
+  console.log(JSON.stringify(pack, null, 2));
 }
 
 async function outputJson(value: unknown, out?: string): Promise<void> {
