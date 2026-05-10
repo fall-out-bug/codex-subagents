@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
-import { runAutoresearch } from "../src/autoresearch.js";
+import { applyBestPatch, readAutoresearchPatch, readAutoresearchRun, runAutoresearch } from "../src/autoresearch.js";
 
 const execFileAsync = promisify(execFile);
 const tempRoots: string[] = [];
@@ -81,6 +81,15 @@ console.log(JSON.stringify({ score }));
       "candidate-2",
       "patch.diff"
     ))).resolves.toBeUndefined();
+
+    await expect(readAutoresearchRun(cwd, result.id)).resolves.toMatchObject({
+      id: result.id,
+      best: { candidate: 2 }
+    });
+    await expect(readAutoresearchPatch(cwd, result.id)).resolves.toContain("+candidate=2");
+
+    await applyBestPatch(cwd, result.id);
+    await expect(readFile(path.join(cwd, "score.txt"), "utf8")).resolves.toContain("candidate=2");
   });
 
   it("exposes an autoresearch CLI command", async () => {
@@ -122,6 +131,67 @@ echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","find
     expect(parsed.baseline.score).toBe(1);
     expect(parsed.experiments[0]?.state).toBe("pass");
     expect(parsed.best).toBeNull();
+  });
+
+  it("exposes status, result, patch, and apply-best CLI commands", async () => {
+    const cwd = await tempGitProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+echo "candidate=2" > score.txt
+echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","findings":[],"evidence":["score.txt"],"nextActions":[]}'
+`);
+    const metricPath = path.join(cwd, "metric.mjs");
+    await writeFile(metricPath, `
+import { readFileSync } from "node:fs";
+const raw = readFileSync("score.txt", "utf8");
+console.log(JSON.stringify({ score: raw.includes("candidate=2") ? 2 : 0 }));
+`);
+    const programPath = path.join(cwd, "program.md");
+    await writeFile(programPath, "Question: test apply-best.\n");
+
+    const output = await execFileAsync(
+      "node",
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "autoresearch",
+        "run",
+        "pi",
+        "--cwd",
+        cwd,
+        "--program",
+        programPath,
+        "--metric",
+        `node ${metricPath}`,
+        "--candidates",
+        "1"
+      ],
+      {
+        cwd: process.cwd(),
+        env: { ...process.env, PATH: `${fakeBin}:${process.env.PATH ?? ""}` }
+      }
+    );
+    const run = JSON.parse(output.stdout);
+
+    const status = await execFileAsync("node", ["--import", "tsx", "src/cli.ts", "autoresearch", "status", run.id, "--cwd", cwd], {
+      cwd: process.cwd()
+    });
+    expect(JSON.parse(status.stdout).best.candidate).toBe(1);
+
+    const result = await execFileAsync("node", ["--import", "tsx", "src/cli.ts", "autoresearch", "result", run.id, "--cwd", cwd], {
+      cwd: process.cwd()
+    });
+    expect(JSON.parse(result.stdout).id).toBe(run.id);
+
+    const patch = await execFileAsync("node", ["--import", "tsx", "src/cli.ts", "autoresearch", "patch", run.id, "--cwd", cwd], {
+      cwd: process.cwd()
+    });
+    expect(patch.stdout).toContain("+candidate=2");
+
+    await execFileAsync("node", ["--import", "tsx", "src/cli.ts", "autoresearch", "apply-best", run.id, "--cwd", cwd], {
+      cwd: process.cwd()
+    });
+    await expect(readFile(path.join(cwd, "score.txt"), "utf8")).resolves.toContain("candidate=2");
   });
 });
 

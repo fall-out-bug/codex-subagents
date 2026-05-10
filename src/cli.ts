@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 import { Command } from "commander";
-import { runAutoresearch } from "./autoresearch.js";
+import { applyBestPatch, readAutoresearchPatch, readAutoresearchRun, runAutoresearch } from "./autoresearch.js";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
@@ -255,6 +255,52 @@ autoresearch
       profile: options.profile,
       model: options.model
     }), null, 2));
+  });
+
+autoresearch
+  .command("status")
+  .argument("<id>", "Autoresearch run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    const run = await readAutoresearchRun(options.cwd, id);
+    console.log(JSON.stringify({
+      id: run.id,
+      runtime: run.runtime,
+      baseline: run.baseline,
+      candidates: run.candidates,
+      experimentCount: run.experiments.length,
+      best: run.best
+        ? {
+            candidate: run.best.candidate,
+            score: run.best.metric.score,
+            runId: run.best.runId
+          }
+        : null
+    }, null, 2));
+  });
+
+autoresearch
+  .command("result")
+  .argument("<id>", "Autoresearch run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await readAutoresearchRun(options.cwd, id), null, 2));
+  });
+
+autoresearch
+  .command("patch")
+  .argument("<id>", "Autoresearch run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(await readAutoresearchPatch(options.cwd, id));
+  });
+
+autoresearch
+  .command("apply-best")
+  .argument("<id>", "Autoresearch run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await applyBestPatch(options.cwd, id), null, 2));
   });
 
 program

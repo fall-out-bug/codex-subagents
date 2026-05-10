@@ -29,6 +29,9 @@ codex-subagent autoresearch run pi \
   --program program.md \
   --metric "<command that prints JSON with numeric score>" \
   --candidates 5
+
+codex-subagent autoresearch status <research-id>
+codex-subagent autoresearch patch <research-id>
 ```
 
 Use this mode only when a higher-is-better metric is defined. The command records a baseline before trying candidates and selects `best` only when a candidate beats that baseline. Each candidate runs in an isolated worktree and writes `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
@@ -89,6 +92,12 @@ Keep `program.md` short and operational:
 - keep/revert policy
 
 Do not let research agents edit `program.md`, skills, publishing config, or production code outside the explicit experiment scope unless the user converts the research into implementation work.
+
+Apply `best.patch` only after inspecting it:
+
+```bash
+codex-subagent autoresearch apply-best <research-id>
+```
 
 ## Output
 

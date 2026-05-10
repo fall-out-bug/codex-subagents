@@ -136,6 +136,35 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
   return output;
 }
 
+export async function readAutoresearchRun(cwd: string, id: string): Promise<AutoresearchRun> {
+  return JSON.parse(await readFile(path.join(autoresearchRunDir(cwd, id), "result.json"), "utf8")) as AutoresearchRun;
+}
+
+export async function readAutoresearchPatch(cwd: string, id: string): Promise<string> {
+  const run = await readAutoresearchRun(cwd, id);
+  if (!run.best) {
+    throw new Error(`Autoresearch run ${id} has no best candidate`);
+  }
+  return readFile(path.join(autoresearchRunDir(cwd, id), "best.patch"), "utf8");
+}
+
+export async function applyBestPatch(cwd: string, id: string): Promise<{ id: string; candidate: number }> {
+  const run = await readAutoresearchRun(cwd, id);
+  if (!run.best) {
+    throw new Error(`Autoresearch run ${id} has no best candidate`);
+  }
+  const patch = await readAutoresearchPatch(cwd, id);
+  const result = await execa("git", ["apply", "-"], {
+    cwd,
+    input: patch,
+    reject: false
+  });
+  if (result.exitCode !== 0) {
+    throw new Error(result.stderr || "git apply failed");
+  }
+  return { id, candidate: run.best.candidate };
+}
+
 function renderCandidateTask(input: {
   id: string;
   candidate: number;
@@ -191,5 +220,8 @@ async function gitDiff(cwd: string): Promise<string> {
     });
     return result.stdout;
   }));
-  return [tracked.stdout, ...untrackedDiffs].filter(Boolean).join("\n");
+  return [tracked.stdout, ...untrackedDiffs]
+    .filter(Boolean)
+    .map((chunk) => chunk.endsWith("\n") ? chunk : `${chunk}\n`)
+    .join("");
 }

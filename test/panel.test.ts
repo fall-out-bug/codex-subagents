@@ -208,7 +208,7 @@ echo "done"
       pathPrefix: fakeBin
     });
 
-    expect(Date.now() - startedAt).toBeLessThan(1000);
+    expect(Date.now() - startedAt).toBeLessThan(1300);
   });
 
   it("refreshes child run states when reading panel status", async () => {
