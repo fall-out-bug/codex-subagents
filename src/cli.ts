@@ -5,6 +5,7 @@ import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
 import { inspectRun, readRunLog, type LogName } from "./inspect.js";
+import { readPanel, runPanel } from "./panel.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { parseStructuredResult } from "./results.js";
 import { ContextModeSchema, RuntimeSchema } from "./types.js";
@@ -150,6 +151,57 @@ role
   .argument("<path>", "Role card JSON file")
   .action(async (filePath: string) => {
     console.log(JSON.stringify(await readRoleCard(filePath), null, 2));
+  });
+
+const panel = program
+  .command("panel")
+  .description("Run and inspect multi-role subagent panels");
+
+panel
+  .command("run")
+  .argument("<runtime>", "pi, opencode, or gsd2")
+  .requiredOption("--context-pack <path>", "Read a context-pack/v1 JSON file")
+  .option("--role <id>", "Built-in role template id; can be repeated", collect, [])
+  .option("--profile <name>", "Runtime profile, for example readonly or review")
+  .option("--agent <name>", "OpenCode agent name")
+  .option("--model <id>", "Model override")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--timeout <seconds>", "Timeout in seconds per role", "900")
+  .option("--background", "Start every role run in the background")
+  .action(async (runtimeInput: string, options: {
+    contextPack: string;
+    role: string[];
+    profile?: string;
+    agent?: string;
+    model?: string;
+    cwd: string;
+    timeout: string;
+    background?: boolean;
+  }) => {
+    const timeoutSeconds = Number(options.timeout);
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+      throw new Error("--timeout must be a positive number of seconds");
+    }
+
+    console.log(JSON.stringify(await runPanel({
+      runtime: RuntimeSchema.parse(runtimeInput),
+      cwd: options.cwd,
+      contextPackPath: options.contextPack,
+      roleIds: options.role,
+      profile: options.profile,
+      agent: options.agent,
+      model: options.model,
+      timeoutMs: Math.round(timeoutSeconds * 1000),
+      background: options.background ?? false
+    }), null, 2));
+  });
+
+panel
+  .command("status")
+  .argument("<id>", "Panel id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await readPanel(options.cwd, id), null, 2));
   });
 
 program

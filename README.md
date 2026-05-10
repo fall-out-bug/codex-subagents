@@ -91,6 +91,18 @@ Run a GSD2 subagent:
 codex-subagent run gsd2 --task "Create an implementation plan for the upload workflow"
 ```
 
+Run a multi-role panel:
+
+```bash
+codex-subagent panel run pi \
+  --context-pack context.json \
+  --role requirements-reviewer \
+  --role code-reviewer \
+  --role security-reviewer
+
+codex-subagent panel status <panel-id>
+```
+
 Inspect runs:
 
 ```bash
@@ -118,6 +130,8 @@ events.jsonl
 ```
 
 When `--isolate worktree` is used, the run also creates `.codex-subagents/worktrees/<run-id>/` and executes the agent there. The source repository keeps the run registry.
+
+Panels are stored under `.codex-subagents/panels/<panel-id>.json` and reference the child run ids for each role.
 
 ## Context Packs
 

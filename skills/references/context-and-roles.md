@@ -71,6 +71,20 @@ codex-subagent result <run-id> --structured
 
 If the result is free-form text, treat it as `not_assessed` until re-run with the structured contract.
 
+## Panels
+
+Use panels when the task needs independent planes:
+
+```bash
+codex-subagent panel run pi \
+  --context-pack context.json \
+  --role requirements-reviewer \
+  --role code-reviewer \
+  --role security-reviewer
+```
+
+The panel record stores child run ids by role. Inspect each child run for logs, events, and structured results.
+
 ## Launch Pattern
 
 ```bash

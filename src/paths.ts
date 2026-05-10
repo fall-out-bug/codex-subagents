@@ -11,3 +11,7 @@ export function runsRoot(cwd: string): string {
 export function runDir(cwd: string, id: string): string {
   return path.join(runsRoot(cwd), id);
 }
+
+export function panelsRoot(cwd: string): string {
+  return path.join(registryRoot(cwd), "panels");
+}
