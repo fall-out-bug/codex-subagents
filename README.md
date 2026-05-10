@@ -107,12 +107,18 @@ codex-subagent panel results <panel-id> --structured
 Run a bounded autoresearch loop:
 
 ```bash
+codex-subagent autoresearch search \
+  --query "prior art for parser recovery" \
+  --note "Include local notes or fetched URLs here" \
+  --out sources.json
+
 codex-subagent autoresearch run pi \
   --program program.md \
   --metric "npm run metric" \
   --candidates 5 \
   --model kimi-coding/k2p6 \
-  --model zai/glm-5.1
+  --model zai/glm-5.1 \
+  --sources sources.json
 
 codex-subagent autoresearch status <research-id>
 codex-subagent autoresearch patch <research-id>
@@ -123,6 +129,7 @@ codex-subagent autoresearch apply-best <research-id>
 
 The metric command must print JSON with a numeric `score`; higher is better. Autoresearch records a baseline before trying candidates and only selects a best candidate when it beats that baseline. Each candidate runs in an isolated git worktree. The run writes `program.md`, `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
 Repeated `--model` values are assigned to candidates round-robin.
+`--sources` passes `research-sources/v1` packs into candidate prompts as untrusted source material.
 
 Inspect runs:
 

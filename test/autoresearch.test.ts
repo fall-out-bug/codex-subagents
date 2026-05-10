@@ -5,6 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import { applyBestPatch, readAutoresearchPatch, readAutoresearchRun, runAutoresearch } from "../src/autoresearch.js";
+import { buildResearchSources, writeResearchSources } from "../src/sources.js";
 
 const execFileAsync = promisify(execFile);
 const tempRoots: string[] = [];
@@ -272,6 +273,71 @@ console.log(JSON.stringify({ score: raw.includes("candidate=2") ? 2 : 1 }));
       "model-b",
       "model-a"
     ]);
+  });
+
+  it("passes research source packs into candidate prompts", async () => {
+    const cwd = await tempGitProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+printf '%s\\n' "$@" > task.txt
+echo "candidate=2" > score.txt
+echo '{"schemaVersion":"subagent-result/v1","status":"pass","summary":"ok","findings":[],"evidence":["source-1"],"nextActions":[]}'
+`);
+    const metricPath = path.join(cwd, "metric.mjs");
+    await writeFile(metricPath, "console.log(JSON.stringify({ score: 2 }));\n");
+    const programPath = path.join(cwd, "program.md");
+    await writeFile(programPath, "Question: use source material.\n");
+    const sourcesPath = path.join(cwd, "sources.json");
+    await writeResearchSources(sourcesPath, await buildResearchSources({
+      cwd,
+      query: "source-assisted research",
+      notes: ["source note with useful context"]
+    }));
+    await execFileAsync("git", ["add", "program.md", "metric.mjs", "sources.json", "bin/pi"], { cwd });
+    await execFileAsync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add research inputs"], { cwd });
+
+    const result = await runAutoresearch({
+      cwd,
+      runtime: "pi",
+      programPath,
+      metricCommand: `node ${metricPath}`,
+      candidates: 1,
+      timeoutMs: 10_000,
+      pathPrefix: fakeBin,
+      sourcePaths: [sourcesPath]
+    });
+
+    expect(result.sources).toEqual([sourcesPath]);
+    const task = await readFile(path.join(result.experiments[0]!.executionCwd, "task.txt"), "utf8");
+    expect(task).toContain("Research Sources JSON");
+    expect(task).toContain("source note with useful context");
+    await expect(readFile(path.join(cwd, ".codex-subagents", "autoresearch", result.id, "sources.json"), "utf8")).resolves.toContain("research-sources/v1");
+  });
+
+  it("creates research source packs from the CLI", async () => {
+    const cwd = await tempGitProject();
+    const out = path.join(cwd, "sources.json");
+    const output = await execFileAsync(
+      "node",
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "autoresearch",
+        "search",
+        "--cwd",
+        cwd,
+        "--query",
+        "test query",
+        "--note",
+        "manual source",
+        "--out",
+        out
+      ],
+      { cwd: process.cwd() }
+    );
+
+    expect(JSON.parse(output.stdout).schemaVersion).toBe("research-sources/v1");
+    expect(JSON.parse(await readFile(out, "utf8")).sources[0].content).toBe("manual source");
   });
 });
 

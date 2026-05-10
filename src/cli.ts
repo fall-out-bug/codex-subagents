@@ -9,6 +9,7 @@ import { inspectRun, readRunLog, type LogName } from "./inspect.js";
 import { readPanel, readPanelResults, runPanel } from "./panel.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { parseStructuredResult } from "./results.js";
+import { buildResearchSources, writeResearchSources } from "./sources.js";
 import { ContextModeSchema, RuntimeSchema } from "./types.js";
 import {
   buildContextPack,
@@ -219,6 +220,33 @@ const autoresearch = program
   .description("Run bounded self-improving experiment loops");
 
 autoresearch
+  .command("search")
+  .requiredOption("--query <text>", "Research query")
+  .option("--url <url>", "URL to fetch into the source pack; can be repeated", collect, [])
+  .option("--file <path>", "Local file to include in the source pack; can be repeated", collect, [])
+  .option("--note <text>", "Manual source note; can be repeated", collect, [])
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .requiredOption("--out <path>", "Write research-sources/v1 JSON")
+  .action(async (options: {
+    query: string;
+    url: string[];
+    file: string[];
+    note: string[];
+    cwd: string;
+    out: string;
+  }) => {
+    const pack = await buildResearchSources({
+      cwd: options.cwd,
+      query: options.query,
+      urls: options.url,
+      files: options.file,
+      notes: options.note
+    });
+    await writeResearchSources(options.out, pack);
+    console.log(JSON.stringify(pack, null, 2));
+  });
+
+autoresearch
   .command("run")
   .argument("<runtime>", "pi, opencode, or gsd2")
   .requiredOption("--program <path>", "Research program markdown file")
@@ -228,6 +256,7 @@ autoresearch
   .option("--timeout <seconds>", "Timeout in seconds per candidate", "900")
   .option("--profile <name>", "Runtime profile")
   .option("--model <id>", "Model override; can be repeated for round-robin candidates", collect, [])
+  .option("--sources <path>", "research-sources/v1 JSON file; can be repeated", collect, [])
   .action(async (runtimeInput: string, options: {
     program: string;
     metric: string;
@@ -236,6 +265,7 @@ autoresearch
     timeout: string;
     profile?: string;
     model: string[];
+    sources: string[];
   }) => {
     const timeoutSeconds = Number(options.timeout);
     const candidates = Number(options.candidates);
@@ -253,7 +283,8 @@ autoresearch
       candidates,
       timeoutMs: Math.round(timeoutSeconds * 1000),
       profile: options.profile,
-      models: options.model.length > 0 ? options.model : undefined
+      models: options.model.length > 0 ? options.model : undefined,
+      sourcePaths: options.sources.length > 0 ? options.sources : undefined
     }), null, 2));
   });
 
