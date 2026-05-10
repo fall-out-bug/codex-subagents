@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
+import { inspectRun, readRunLog, type LogName } from "./inspect.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { RuntimeSchema } from "./types.js";
 
@@ -69,6 +70,24 @@ program
   .action(async (id: string, options: { cwd: string }) => {
     const status = await readStatus(options.cwd, id);
     console.log(await readFile(status.resultPath, "utf8"));
+  });
+
+program
+  .command("inspect")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await inspectRun(options.cwd, id), null, 2));
+  });
+
+program
+  .command("logs")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--stream <name>", "stdout or stderr", "stdout")
+  .action(async (id: string, options: { cwd: string; stream: string }) => {
+    const stream = options.stream === "stderr" ? "stderr" : "stdout";
+    console.log(await readRunLog(options.cwd, id, stream as LogName));
   });
 
 program

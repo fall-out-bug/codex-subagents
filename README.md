@@ -64,7 +64,9 @@ Inspect runs:
 ```bash
 codex-subagent list
 codex-subagent status <run-id>
+codex-subagent inspect <run-id>
 codex-subagent events <run-id>
+codex-subagent logs <run-id> --stream stderr
 codex-subagent result <run-id>
 codex-subagent cancel <run-id>
 ```

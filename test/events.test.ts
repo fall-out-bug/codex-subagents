@@ -50,8 +50,7 @@ echo "background-ok"
       pathPrefix: fakeBin
     });
 
-    await wait(1000);
-    const events = await readEvents(cwd, result.id);
+    const events = await waitForEvents(cwd, result.id, "process.finished");
     expect(events.map((event) => event.type)).toContain("monitor.started");
     expect(events.map((event) => event.type)).toContain("process.started");
     expect(events.map((event) => event.type)).toContain("process.finished");
@@ -72,6 +71,17 @@ async function fakeRuntime(cwd: string, name: string, script: string): Promise<s
   return bin;
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function waitForEvents(cwd: string, id: string, type: string) {
+  const deadline = Date.now() + 3000;
+
+  while (Date.now() < deadline) {
+    const events = await readEvents(cwd, id);
+    if (events.some((event) => event.type === type)) {
+      return events;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  return readEvents(cwd, id);
 }
