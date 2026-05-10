@@ -12,6 +12,7 @@ Coordinate implementation work through external subagents while keeping Codex as
 
 - Use `context-pack/v1` for each bounded task.
 - Use `role-card/v1` for each worker role.
+- Require `subagent-result/v1` structured output for subagent reports.
 - Use `--isolate worktree` for write-capable agents.
 - Assign disjoint file ownership to parallel workers.
 - Treat subagent output as work product, not truth. Inspect diffs, logs, tests, and events before integration.
@@ -42,7 +43,7 @@ codex-subagent context build \
 
 codex-subagent run opencode \
   --context-pack explore-context.json \
-  --role-card roles/explorer.json \
+  --role-template explorer \
   --background
 ```
 
@@ -52,7 +53,7 @@ codex-subagent run opencode \
 ```bash
 codex-subagent run opencode \
   --context-pack worker-context.json \
-  --role-card roles/worker.json \
+  --role-template worker \
   --isolate worktree \
   --background
 ```
@@ -62,7 +63,7 @@ codex-subagent run opencode \
 ```bash
 codex-subagent inspect <run-id>
 codex-subagent events <run-id>
-codex-subagent result <run-id>
+codex-subagent result <run-id> --structured
 ```
 
 5. Review worker diff with a separate reviewer.

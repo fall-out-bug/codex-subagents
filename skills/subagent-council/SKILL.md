@@ -13,6 +13,7 @@ Run advisory deliberation through `codex-subagent`. Use this skill for decisions
 - Keep Decision Owner authority with the user unless explicitly delegated.
 - Use `context-pack/v1` with `mode: council`.
 - Use `role-card/v1` for each role.
+- Require `subagent-result/v1` structured output for every council role.
 - Roles define capability and responsibility, not a fixed model.
 - Preserve minority reports and domain vetoes.
 - Do not convert consensus into authorization to implement, merge, or ship.
@@ -42,12 +43,18 @@ codex-subagent context build \
   --out context.json
 ```
 
-3. Run independent first-pass positions:
+3. Run independent first-pass positions as a panel:
 
 ```bash
-codex-subagent run pi --context-pack context.json --role-card roles/architect.json --background
-codex-subagent run pi --context-pack context.json --role-card roles/critic.json --background
-codex-subagent run pi --context-pack context.json --role-card roles/pragmatist.json --background
+codex-subagent panel run pi \
+  --context-pack context.json \
+  --role architect \
+  --role critic \
+  --role technician \
+  --role pragmatist \
+  --role engineer
+
+codex-subagent panel results <panel-id> --structured
 ```
 
 4. Inspect outputs and create an issue ledger:

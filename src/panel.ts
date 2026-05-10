@@ -45,7 +45,7 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
 
   const runtime = RuntimeSchema.parse(options.runtime);
   const contextPack = await readContextPack(options.contextPackPath);
-  const id = nanoid(10);
+  const id = `panel_${nanoid(10)}`;
   const runs: PanelRun[] = [];
 
   for (const roleId of options.roleIds) {
@@ -99,7 +99,8 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
 }
 
 export async function readPanel(cwd: string, id: string): Promise<SubagentPanel> {
-  return JSON.parse(await readFile(panelPath(cwd, id), "utf8")) as SubagentPanel;
+  const panel = JSON.parse(await readFile(panelPath(cwd, id), "utf8")) as SubagentPanel;
+  return refreshPanel(cwd, panel);
 }
 
 export async function readPanelResults(cwd: string, id: string, structured: boolean): Promise<unknown> {
@@ -126,6 +127,23 @@ export async function readPanelResults(cwd: string, id: string, structured: bool
 async function writePanel(cwd: string, panel: SubagentPanel): Promise<void> {
   await mkdir(panelsRoot(cwd), { recursive: true });
   await writeFile(panelPath(cwd, panel.id), `${JSON.stringify(panel, null, 2)}\n`);
+}
+
+async function refreshPanel(cwd: string, panel: SubagentPanel): Promise<SubagentPanel> {
+  const runs = await Promise.all(panel.runs.map(async (run) => {
+    try {
+      const status = await readStatus(cwd, run.runId);
+      return {
+        ...run,
+        state: status.state
+      };
+    } catch {
+      return run;
+    }
+  }));
+  const refreshed = { ...panel, runs };
+  await writePanel(cwd, refreshed);
+  return refreshed;
 }
 
 function panelPath(cwd: string, id: string): string {

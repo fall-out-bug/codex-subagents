@@ -12,6 +12,7 @@ Run autoresearch-style loops through `codex-subagent`: hypothesis, experiment, m
 
 - Use `context-pack/v1` with `mode: research`.
 - Use `role-card/v1` for researcher, experimenter, evaluator, and synthesizer roles.
+- Require `subagent-result/v1` structured output for each research run.
 - Define the metric before running experiments.
 - Keep experiments bounded and replayable.
 - Log failures as evidence, not as noise.
@@ -45,7 +46,7 @@ codex-subagent context build \
 ```bash
 codex-subagent run pi \
   --context-pack context.json \
-  --role-card roles/researcher.json \
+  --role-template researcher \
   --background
 ```
 
@@ -54,7 +55,7 @@ codex-subagent run pi \
 ```bash
 codex-subagent inspect <run-id>
 codex-subagent logs <run-id>
-codex-subagent result <run-id>
+codex-subagent result <run-id> --structured
 ```
 
 5. Record:

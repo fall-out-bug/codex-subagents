@@ -159,7 +159,7 @@ export async function cancelRun(cwd: string, id: string): Promise<Awaited<Return
 }
 
 async function buildRequest(options: RunOptions): Promise<RunRequest> {
-  const id = nanoid(10);
+  const id = `run_${nanoid(10)}`;
   const executionCwd = await prepareExecutionCwd({
     cwd: options.cwd,
     id,

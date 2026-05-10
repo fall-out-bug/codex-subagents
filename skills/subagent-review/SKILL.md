@@ -12,6 +12,7 @@ Run independent review planes through `codex-subagent`. Keep this skill read-onl
 
 - Use one `context-pack/v1` for the shared target.
 - Use one `role-card/v1` per review plane.
+- Require `subagent-result/v1` structured output for every reviewer.
 - Keep each reviewer independent. Do not include other reviewers' conclusions in the first pass.
 - Treat missing tests, CI, screenshots, or runtime proof as `not_assessed`.
 - Do not treat reviewer output as approval to merge, ship, or widen scope.
@@ -41,22 +42,29 @@ codex-subagent context build \
   --out context.json
 ```
 
-4. Create or select role cards. Use `authority: advisory` unless the user explicitly assigns decision authority.
-5. Run each plane:
+4. Run the panel with built-in advisory role templates:
 
 ```bash
-codex-subagent run pi \
+codex-subagent panel run pi \
   --context-pack context.json \
-  --role-card roles/security-reviewer.json \
-  --background
+  --role requirements-reviewer \
+  --role code-reviewer \
+  --role evidence-reviewer \
+  --role security-reviewer
 ```
 
-6. Inspect all runs:
+5. Aggregate structured results:
+
+```bash
+codex-subagent panel results <panel-id> --structured
+```
+
+6. Inspect child runs when a role is failed, partial, empty, or surprising:
 
 ```bash
 codex-subagent inspect <run-id>
 codex-subagent logs <run-id> --stream stderr
-codex-subagent result <run-id>
+codex-subagent result <run-id> --structured
 ```
 
 7. Synthesize findings by severity and evidence. Mark unusable, empty, hung, or off-task reviewer output as `not_assessed`.
