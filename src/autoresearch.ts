@@ -17,6 +17,7 @@ export type AutoresearchExperiment = {
   candidate: number;
   runId: string;
   state: string;
+  model?: string;
   executionCwd: string;
   result: StructuredResult;
   metric: Metric;
@@ -44,6 +45,7 @@ export type AutoresearchOptions = {
   timeoutMs: number;
   pathPrefix?: string;
   model?: string;
+  models?: string[];
   profile?: string;
 };
 
@@ -80,13 +82,14 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
       program,
       metricCommand: options.metricCommand
     });
+    const model = modelForCandidate(options, candidate);
     const run = await runSubagent({
       runtime,
       cwd: options.cwd,
       task,
       timeoutMs: options.timeoutMs,
       pathPrefix: options.pathPrefix,
-      model: options.model,
+      model,
       profile: options.profile,
       executionCwd
     });
@@ -103,6 +106,7 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
       candidate,
       runId: run.id,
       state: metric.score > Number.NEGATIVE_INFINITY && result.status !== "fail" ? "pass" : "fail",
+      model,
       executionCwd,
       result,
       metric
@@ -134,6 +138,13 @@ export async function runAutoresearch(options: AutoresearchOptions): Promise<Aut
   };
   await writeFile(path.join(dir, "result.json"), `${JSON.stringify(output, null, 2)}\n`);
   return output;
+}
+
+function modelForCandidate(options: AutoresearchOptions, candidate: number): string | undefined {
+  if (options.models && options.models.length > 0) {
+    return options.models[(candidate - 1) % options.models.length];
+  }
+  return options.model;
 }
 
 export async function readAutoresearchRun(cwd: string, id: string): Promise<AutoresearchRun> {

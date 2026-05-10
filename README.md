@@ -110,7 +110,9 @@ Run a bounded autoresearch loop:
 codex-subagent autoresearch run pi \
   --program program.md \
   --metric "npm run metric" \
-  --candidates 5
+  --candidates 5 \
+  --model kimi-coding/k2p6 \
+  --model zai/glm-5.1
 
 codex-subagent autoresearch status <research-id>
 codex-subagent autoresearch patch <research-id>
@@ -120,6 +122,7 @@ codex-subagent autoresearch apply-best <research-id>
 `apply-best` refuses to run on a dirty worktree unless `--force` is passed.
 
 The metric command must print JSON with a numeric `score`; higher is better. Autoresearch records a baseline before trying candidates and only selects a best candidate when it beats that baseline. Each candidate runs in an isolated git worktree. The run writes `program.md`, `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+Repeated `--model` values are assigned to candidates round-robin.
 
 Inspect runs:
 

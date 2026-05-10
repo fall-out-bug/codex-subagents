@@ -28,13 +28,16 @@ Prefer the native autoresearch command when there is a metric command and candid
 codex-subagent autoresearch run pi \
   --program program.md \
   --metric "<command that prints JSON with numeric score>" \
-  --candidates 5
+  --candidates 5 \
+  --model kimi-coding/k2p6 \
+  --model zai/glm-5.1
 
 codex-subagent autoresearch status <research-id>
 codex-subagent autoresearch patch <research-id>
 ```
 
 Use this mode only when a higher-is-better metric is defined. The command records a baseline before trying candidates and selects `best` only when a candidate beats that baseline. Each candidate runs in an isolated worktree and writes `baseline.json`, `experiments.jsonl`, candidate `patch.diff` files, `best.patch`, and `result.json` under `.codex-subagents/autoresearch/<research-id>/`.
+When multiple `--model` values are provided, candidates use them round-robin to preserve model diversity.
 
 1. Write a short research brief:
    - question

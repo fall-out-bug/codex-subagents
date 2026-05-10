@@ -227,7 +227,7 @@ autoresearch
   .option("--cwd <path>", "Working directory", process.cwd())
   .option("--timeout <seconds>", "Timeout in seconds per candidate", "900")
   .option("--profile <name>", "Runtime profile")
-  .option("--model <id>", "Model override")
+  .option("--model <id>", "Model override; can be repeated for round-robin candidates", collect, [])
   .action(async (runtimeInput: string, options: {
     program: string;
     metric: string;
@@ -235,7 +235,7 @@ autoresearch
     cwd: string;
     timeout: string;
     profile?: string;
-    model?: string;
+    model: string[];
   }) => {
     const timeoutSeconds = Number(options.timeout);
     const candidates = Number(options.candidates);
@@ -253,7 +253,7 @@ autoresearch
       candidates,
       timeoutMs: Math.round(timeoutSeconds * 1000),
       profile: options.profile,
-      model: options.model
+      models: options.model.length > 0 ? options.model : undefined
     }), null, 2));
   });
 
