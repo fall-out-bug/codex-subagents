@@ -1,0 +1,87 @@
+import { readFile } from "node:fs/promises";
+import process from "node:process";
+import { Command } from "commander";
+import { runSubagent } from "./runner.js";
+import { listStatuses, readStatus } from "./registry.js";
+import { RuntimeSchema } from "./types.js";
+
+const program = new Command();
+
+program
+  .name("codex-subagent")
+  .description("Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.")
+  .version("0.1.0");
+
+program
+  .command("run")
+  .argument("<runtime>", "pi, opencode, or gsd2")
+  .option("--task <text>", "Task prompt")
+  .option("--task-file <path>", "Read task prompt from a file")
+  .option("--profile <name>", "Runtime profile, for example readonly or review")
+  .option("--agent <name>", "OpenCode agent name")
+  .option("--model <id>", "Model override")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--timeout <seconds>", "Timeout in seconds", "900")
+  .action(async (runtimeInput: string, options: Record<string, string | undefined>) => {
+    const runtime = RuntimeSchema.parse(runtimeInput);
+    const task = await resolveTask(options.task, options.taskFile);
+    const timeoutSeconds = Number(options.timeout);
+
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+      throw new Error("--timeout must be a positive number of seconds");
+    }
+
+    const result = await runSubagent({
+      runtime,
+      cwd: options.cwd ?? process.cwd(),
+      task,
+      profile: options.profile,
+      agent: options.agent,
+      model: options.model,
+      timeoutMs: Math.round(timeoutSeconds * 1000)
+    });
+
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+program
+  .command("status")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    console.log(JSON.stringify(await readStatus(options.cwd, id), null, 2));
+  });
+
+program
+  .command("result")
+  .argument("<id>", "Run id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (id: string, options: { cwd: string }) => {
+    const status = await readStatus(options.cwd, id);
+    console.log(await readFile(status.resultPath, "utf8"));
+  });
+
+program
+  .command("list")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .action(async (options: { cwd: string }) => {
+    console.log(JSON.stringify(await listStatuses(options.cwd), null, 2));
+  });
+
+async function resolveTask(task?: string, taskFile?: string): Promise<string> {
+  if (task && taskFile) {
+    throw new Error("Use either --task or --task-file, not both");
+  }
+
+  if (taskFile) {
+    return readFile(taskFile, "utf8");
+  }
+
+  if (task) {
+    return task;
+  }
+
+  throw new Error("Provide --task or --task-file");
+}
+
+await program.parseAsync();
