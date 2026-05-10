@@ -33,6 +33,21 @@ Required shape:
 
 Keep role cards contract-first, not persona-first. A useful role says what evidence counts, what the role may veto, what it must not decide, and what output format is required.
 
+Use built-in role templates before writing custom JSON:
+
+```bash
+codex-subagent role list
+codex-subagent role show security-reviewer
+codex-subagent role write security-reviewer --out security-reviewer.json
+```
+
+Current template families:
+
+- review: `requirements-reviewer`, `code-reviewer`, `ux-reviewer`, `evidence-reviewer`, `security-reviewer`
+- council: `architect`, `critic`, `technician`, `pragmatist`, `engineer`
+- dev: `explorer`, `planner`, `worker`, `tester`, `reviewer`
+- research: `researcher`, `experimenter`, `evaluator`, `synthesizer`
+
 ## Launch Pattern
 
 ```bash

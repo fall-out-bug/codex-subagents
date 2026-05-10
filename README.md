@@ -60,6 +60,9 @@ codex-subagent run opencode --isolate worktree --agent build --task "Implement t
 Build a typed context pack and run a role-bound agent:
 
 ```bash
+codex-subagent role list
+codex-subagent role write security-reviewer --out security-reviewer.json
+
 codex-subagent context build \
   --subject "PR review" \
   --mode review \
@@ -120,6 +123,13 @@ When `--isolate worktree` is used, the run also creates `.codex-subagents/worktr
 `context-pack/v1` is the portable context envelope used by review panels, councils, development subagents, and research loops. It separates trusted rules from untrusted artifacts such as diffs, logs, evidence, and file contents.
 
 `role-card/v1` defines the agent role contract: plane, mission, authority, veto domain, forbidden actions, output schema, and model policy.
+
+Built-in role templates cover the common workflows:
+
+- review: `requirements-reviewer`, `code-reviewer`, `ux-reviewer`, `evidence-reviewer`, `security-reviewer`
+- council: `architect`, `critic`, `technician`, `pragmatist`, `engineer`
+- dev: `explorer`, `planner`, `worker`, `tester`, `reviewer`
+- research: `researcher`, `experimenter`, `evaluator`, `synthesizer`
 
 ## Skills
 

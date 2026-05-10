@@ -13,6 +13,7 @@ import {
   readRoleCard,
   renderTaskFromContext
 } from "./context.js";
+import { getRoleTemplate, listRoleTemplates } from "./roles.js";
 
 const program = new Command();
 
@@ -115,7 +116,31 @@ context
 
 const role = program
   .command("role")
-  .description("Validate role-card/v1 files");
+  .description("List, write, and validate role-card/v1 files");
+
+role
+  .command("list")
+  .description("List built-in role-card templates")
+  .action(() => {
+    console.log(JSON.stringify(listRoleTemplates(), null, 2));
+  });
+
+role
+  .command("show")
+  .argument("<id>", "Built-in role template id")
+  .description("Print a built-in role-card template")
+  .action((id: string) => {
+    console.log(JSON.stringify(getRoleTemplate(id), null, 2));
+  });
+
+role
+  .command("write")
+  .argument("<id>", "Built-in role template id")
+  .option("--out <path>", "Write JSON to a file instead of stdout")
+  .description("Write a built-in role-card template")
+  .action(async (id: string, options: { out?: string }) => {
+    await outputJson(getRoleTemplate(id), options.out);
+  });
 
 role
   .command("validate")
