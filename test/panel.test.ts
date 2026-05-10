@@ -17,7 +17,19 @@ describe("subagent panels", () => {
   it("runs multiple built-in role templates and records panel status", async () => {
     const cwd = await tempProject();
     const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
-echo "panel-ok"
+role="unknown"
+if [[ "$*" == *"Role: security-reviewer"* ]]; then role="security-reviewer"; fi
+if [[ "$*" == *"Role: code-reviewer"* ]]; then role="code-reviewer"; fi
+cat <<JSON
+{
+  "schemaVersion": "subagent-result/v1",
+  "status": "pass",
+  "summary": "$role ok",
+  "findings": [],
+  "evidence": ["$role"],
+  "nextActions": []
+}
+JSON
 `);
     const contextPath = path.join(cwd, "context.json");
     await writeFile(contextPath, JSON.stringify({
@@ -69,6 +81,17 @@ echo "panel-ok"
       cwd: process.cwd()
     });
     expect(JSON.parse(status.stdout).id).toBe(panel.id);
+
+    const results = await execFileAsync(
+      "node",
+      ["--import", "tsx", "src/cli.ts", "panel", "results", panel.id, "--structured", "--cwd", cwd],
+      { cwd: process.cwd() }
+    );
+    const parsedResults = JSON.parse(results.stdout);
+    expect(parsedResults.runs.map((run: { result: { summary: string } }) => run.result.summary)).toEqual([
+      "security-reviewer ok",
+      "code-reviewer ok"
+    ]);
   });
 });
 

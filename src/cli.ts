@@ -5,7 +5,7 @@ import { cancelRun, runSubagent, startSubagent } from "./runner.js";
 import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
 import { inspectRun, readRunLog, type LogName } from "./inspect.js";
-import { readPanel, runPanel } from "./panel.js";
+import { readPanel, readPanelResults, runPanel } from "./panel.js";
 import { listStatuses, readStatus } from "./registry.js";
 import { parseStructuredResult } from "./results.js";
 import { ContextModeSchema, RuntimeSchema } from "./types.js";
@@ -202,6 +202,15 @@ panel
   .option("--cwd <path>", "Working directory", process.cwd())
   .action(async (id: string, options: { cwd: string }) => {
     console.log(JSON.stringify(await readPanel(options.cwd, id), null, 2));
+  });
+
+panel
+  .command("results")
+  .argument("<id>", "Panel id")
+  .option("--cwd <path>", "Working directory", process.cwd())
+  .option("--structured", "Parse every child result as subagent-result/v1 JSON")
+  .action(async (id: string, options: { cwd: string; structured?: boolean }) => {
+    console.log(JSON.stringify(await readPanelResults(options.cwd, id, options.structured ?? false), null, 2));
   });
 
 program

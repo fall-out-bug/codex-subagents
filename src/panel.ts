@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { readContextPack, renderTaskFromContext } from "./context.js";
 import { panelsRoot } from "./paths.js";
 import { readStatus } from "./registry.js";
+import { parseStructuredResult } from "./results.js";
 import { runSubagent, startSubagent } from "./runner.js";
 import { getRoleTemplate } from "./roles.js";
 import { RuntimeSchema, type RuntimeName } from "./types.js";
@@ -99,6 +100,27 @@ export async function runPanel(options: RunPanelOptions): Promise<SubagentPanel>
 
 export async function readPanel(cwd: string, id: string): Promise<SubagentPanel> {
   return JSON.parse(await readFile(panelPath(cwd, id), "utf8")) as SubagentPanel;
+}
+
+export async function readPanelResults(cwd: string, id: string, structured: boolean): Promise<unknown> {
+  const panel = await readPanel(cwd, id);
+  const runs = await Promise.all(panel.runs.map(async (run) => {
+    const status = await readStatus(cwd, run.runId);
+    const raw = await readFile(status.resultPath, "utf8");
+    return {
+      roleId: run.roleId,
+      runId: run.runId,
+      state: status.state,
+      result: structured ? parseStructuredResult(raw) : raw
+    };
+  }));
+
+  return {
+    schemaVersion: "subagent-panel-results/v1",
+    id: panel.id,
+    runtime: panel.runtime,
+    runs
+  };
 }
 
 async function writePanel(cwd: string, panel: SubagentPanel): Promise<void> {

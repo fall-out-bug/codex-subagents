@@ -101,6 +101,7 @@ codex-subagent panel run pi \
   --role security-reviewer
 
 codex-subagent panel status <panel-id>
+codex-subagent panel results <panel-id> --structured
 ```
 
 Inspect runs:
@@ -132,6 +133,7 @@ events.jsonl
 When `--isolate worktree` is used, the run also creates `.codex-subagents/worktrees/<run-id>/` and executes the agent there. The source repository keeps the run registry.
 
 Panels are stored under `.codex-subagents/panels/<panel-id>.json` and reference the child run ids for each role.
+Use `panel results <panel-id> --structured` to aggregate child `subagent-result/v1` outputs.
 
 ## Context Packs
 

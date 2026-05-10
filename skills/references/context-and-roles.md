@@ -85,6 +85,12 @@ codex-subagent panel run pi \
 
 The panel record stores child run ids by role. Inspect each child run for logs, events, and structured results.
 
+Aggregate structured child results with:
+
+```bash
+codex-subagent panel results <panel-id> --structured
+```
+
 ## Launch Pattern
 
 ```bash
