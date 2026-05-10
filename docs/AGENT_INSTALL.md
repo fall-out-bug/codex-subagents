@@ -18,6 +18,12 @@ The installer:
 - symlinks workflow skills into `~/.codex/skills`;
 - verifies the CLI version.
 
+For npm installs, use:
+
+```bash
+npm install -g @fall-out-bug/codex-subagents
+```
+
 Installed skills:
 
 - `subagent-review`

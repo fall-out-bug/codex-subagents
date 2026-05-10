@@ -11,7 +11,7 @@ if [[ ! -d node_modules ]]; then
 fi
 
 npm run build
-npm link
+npm link --force
 
 mkdir -p "$codex_skills_dir"
 

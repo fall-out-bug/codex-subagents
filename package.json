@@ -1,5 +1,5 @@
 {
-  "name": "codex-subagents",
+  "name": "@fall-out-bug/codex-subagents",
   "version": "0.3.0",
   "description": "Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.",
   "repository": {
@@ -12,11 +12,14 @@
   "homepage": "https://github.com/fall-out-bug/codex-subagents#readme",
   "type": "module",
   "bin": {
-    "codex-subagent": "./dist/cli.js",
-    "codex-subagents": "./dist/cli.js"
+    "codex-subagent": "dist/cli.js",
+    "codex-subagents": "dist/cli.js"
   },
   "files": [
     "dist",
+    "docs",
+    "scripts",
+    "skills",
     "README.md",
     "LICENSE"
   ],
@@ -26,7 +29,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run build"
   },
   "keywords": [
     "codex",
@@ -38,6 +42,9 @@
     "agents"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22"
   },

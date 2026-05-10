@@ -16,7 +16,7 @@ Codex already has a strong interactive UX. `pi`, OpenCode, and GSD2 have useful 
 ## Install
 
 ```bash
-npm install -g codex-subagents
+npm install -g @fall-out-bug/codex-subagents
 ```
 
 For local development:
@@ -34,6 +34,8 @@ For local Codex skill integration:
 ```
 
 Detailed agent installation instructions: [`docs/AGENT_INSTALL.md`](docs/AGENT_INSTALL.md).
+
+Publishing instructions: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
 ## Usage
 
