@@ -100,6 +100,7 @@ codex-subagent inspect <run-id>
 codex-subagent events <run-id>
 codex-subagent logs <run-id> --stream stderr
 codex-subagent result <run-id>
+codex-subagent result <run-id> --structured
 codex-subagent cancel <run-id>
 ```
 
@@ -123,6 +124,8 @@ When `--isolate worktree` is used, the run also creates `.codex-subagents/worktr
 `context-pack/v1` is the portable context envelope used by review panels, councils, development subagents, and research loops. It separates trusted rules from untrusted artifacts such as diffs, logs, evidence, and file contents.
 
 `role-card/v1` defines the agent role contract: plane, mission, authority, veto domain, forbidden actions, output schema, and model policy.
+
+`subagent-result/v1` is the normalized result contract. Agents should end with a fenced JSON block containing `status`, `summary`, `findings`, `evidence`, and `nextActions`. `codex-subagent result <run-id> --structured` parses that block; unstructured text is returned as `not_assessed` instead of being treated as proof.
 
 Built-in role templates cover the common workflows:
 

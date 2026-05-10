@@ -112,3 +112,24 @@ export const RoleCardSchema = z.object({
   })
 });
 export type RoleCard = z.infer<typeof RoleCardSchema>;
+
+export const StructuredFindingSchema = z.object({
+  severity: z.enum(["critical", "major", "minor"]),
+  title: z.string(),
+  body: z.string(),
+  evidence: z.array(z.string()).default([]),
+  recommendation: z.string().optional()
+});
+export type StructuredFinding = z.infer<typeof StructuredFindingSchema>;
+
+export const StructuredResultSchema = z.object({
+  schemaVersion: z.literal("subagent-result/v1"),
+  status: RunStateSchema.exclude(["running", "cancelled"]),
+  summary: z.string(),
+  findings: z.array(StructuredFindingSchema).default([]),
+  evidence: z.array(z.string()).default([]),
+  nextActions: z.array(z.string()).default([]),
+  structured: z.boolean().default(true),
+  rawText: z.string().optional()
+});
+export type StructuredResult = z.infer<typeof StructuredResultSchema>;

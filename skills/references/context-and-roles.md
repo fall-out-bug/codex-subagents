@@ -48,6 +48,29 @@ Current template families:
 - dev: `explorer`, `planner`, `worker`, `tester`, `reviewer`
 - research: `researcher`, `experimenter`, `evaluator`, `synthesizer`
 
+## Structured Results
+
+Agents should end with a fenced JSON block matching `subagent-result/v1`:
+
+```json
+{
+  "schemaVersion": "subagent-result/v1",
+  "status": "pass",
+  "summary": "One-sentence outcome.",
+  "findings": [],
+  "evidence": ["test or source reference"],
+  "nextActions": []
+}
+```
+
+Use this after a run:
+
+```bash
+codex-subagent result <run-id> --structured
+```
+
+If the result is free-form text, treat it as `not_assessed` until re-run with the structured contract.
+
 ## Launch Pattern
 
 ```bash

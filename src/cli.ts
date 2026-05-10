@@ -6,6 +6,7 @@ import { readEvents } from "./events.js";
 import type { IsolationMode } from "./isolation.js";
 import { inspectRun, readRunLog, type LogName } from "./inspect.js";
 import { listStatuses, readStatus } from "./registry.js";
+import { parseStructuredResult } from "./results.js";
 import { ContextModeSchema, RuntimeSchema } from "./types.js";
 import {
   buildContextPack,
@@ -161,9 +162,15 @@ program
   .command("result")
   .argument("<id>", "Run id")
   .option("--cwd <path>", "Working directory", process.cwd())
-  .action(async (id: string, options: { cwd: string }) => {
+  .option("--structured", "Parse result as subagent-result/v1 JSON")
+  .action(async (id: string, options: { cwd: string; structured?: boolean }) => {
     const status = await readStatus(options.cwd, id);
-    console.log(await readFile(status.resultPath, "utf8"));
+    const result = await readFile(status.resultPath, "utf8");
+    if (options.structured) {
+      console.log(JSON.stringify(parseStructuredResult(result), null, 2));
+      return;
+    }
+    console.log(result);
   });
 
 program
