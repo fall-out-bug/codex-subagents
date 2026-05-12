@@ -37,6 +37,8 @@ Detailed agent installation instructions: [`docs/AGENT_INSTALL.md`](docs/AGENT_I
 
 Publishing instructions: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
+Publishing requires either a granular npm token with write access and Bypass 2FA enabled, or a fresh `NPM_OTP` for interactive 2FA publishing. See the publishing guide before running `npm publish`.
+
 ## Usage
 
 Run a `pi` subagent:
@@ -190,4 +192,4 @@ Each skill is intentionally thin. It uses `codex-subagent` for execution, contex
 
 ## Current Scope
 
-This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, git worktree isolation, typed context packs, and role cards. The next useful step is structured result parsing.
+This is a bootstrap release. It supports synchronous and background execution, structured JSONL events, git worktree isolation, typed context packs, role cards, multi-role panels, structured result parsing, and bounded autoresearch loops.

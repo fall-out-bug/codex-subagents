@@ -81,7 +81,8 @@ codex-subagent context build \
 Validate role cards:
 
 ```bash
-codex-subagent role validate roles/security-reviewer.json
+codex-subagent role list
+codex-subagent role show security-reviewer
 ```
 
 Run an external agent:
@@ -89,8 +90,20 @@ Run an external agent:
 ```bash
 codex-subagent run pi \
   --context-pack context.json \
-  --role-card roles/security-reviewer.json \
+  --role-template security-reviewer \
   --background
+```
+
+Run an independent review panel:
+
+```bash
+codex-subagent panel run pi \
+  --context-pack context.json \
+  --role requirements-reviewer \
+  --role code-reviewer \
+  --role security-reviewer
+
+codex-subagent panel results <panel-id> --structured
 ```
 
 Inspect evidence before trusting output:
@@ -99,7 +112,7 @@ Inspect evidence before trusting output:
 codex-subagent inspect <run-id>
 codex-subagent events <run-id>
 codex-subagent logs <run-id> --stream stderr
-codex-subagent result <run-id>
+codex-subagent result <run-id> --structured
 ```
 
 For write-capable work, require worktree isolation:
@@ -107,9 +120,29 @@ For write-capable work, require worktree isolation:
 ```bash
 codex-subagent run opencode \
   --context-pack worker-context.json \
-  --role-card roles/worker.json \
+  --role-template worker \
   --isolate worktree \
   --background
+```
+
+For bounded autoresearch, require a metric command that prints JSON with a numeric `score`:
+
+```bash
+codex-subagent autoresearch sources build \
+  --query "research question" \
+  --note "seed source" \
+  --out sources.json
+
+codex-subagent autoresearch run pi \
+  --program program.md \
+  --metric "npm run metric" \
+  --candidates 5 \
+  --model kimi-coding/k2p6 \
+  --model zai/glm-5.1 \
+  --sources sources.json
+
+codex-subagent autoresearch status <research-id>
+codex-subagent autoresearch patch <research-id>
 ```
 
 Do not treat subagent output as approval to merge, deploy, publish, or widen scope. Treat missing or unusable evidence as `not_assessed`.
