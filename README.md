@@ -39,6 +39,8 @@ Publishing instructions: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
 Publishing requires either a granular npm token with write access and Bypass 2FA enabled, or a fresh `NPM_OTP` for interactive 2FA publishing. See the publishing guide before running `npm publish`.
 
+Current npm package: `@fall_out_bug/codex-subagents`.
+
 ## Usage
 
 Run a `pi` subagent:

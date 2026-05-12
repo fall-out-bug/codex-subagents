@@ -17,7 +17,11 @@ codex-subagents
 
 ## npm
 
-The package is not published yet. As of May 12, 2026, `npm view @fall_out_bug/codex-subagents` returns `E404`.
+The first npm release was published on May 12, 2026:
+
+```text
+@fall_out_bug/codex-subagents@0.3.0
+```
 
 ### The auth problem
 
