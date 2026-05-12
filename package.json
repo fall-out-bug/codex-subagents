@@ -1,5 +1,5 @@
 {
-  "name": "@fall-out-bug/codex-subagents",
+  "name": "@fall_out_bug/codex-subagents",
   "version": "0.3.0",
   "description": "Launch pi, OpenCode, and GSD2 agents as external subagents from Codex.",
   "repository": {

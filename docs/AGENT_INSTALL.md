@@ -21,7 +21,7 @@ The installer:
 For npm installs, use:
 
 ```bash
-npm install -g @fall-out-bug/codex-subagents
+npm install -g @fall_out_bug/codex-subagents
 ```
 
 Installed skills:

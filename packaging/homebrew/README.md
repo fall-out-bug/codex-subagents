@@ -48,7 +48,7 @@ Formula template:
 class CodexSubagents < Formula
   desc "Launch pi, OpenCode, and GSD2 agents as external subagents from Codex"
   homepage "https://github.com/fall-out-bug/codex-subagents"
-  url "https://registry.npmjs.org/@fall-out-bug/codex-subagents/-/codex-subagents-VERSION.tgz"
+  url "https://registry.npmjs.org/@fall_out_bug/codex-subagents/-/codex-subagents-VERSION.tgz"
   sha256 "SHA256"
   license "MIT"
 

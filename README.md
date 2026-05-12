@@ -16,7 +16,7 @@ Codex already has a strong interactive UX. `pi`, OpenCode, and GSD2 have useful 
 ## Install
 
 ```bash
-npm install -g @fall-out-bug/codex-subagents
+npm install -g @fall_out_bug/codex-subagents
 ```
 
 For local development:

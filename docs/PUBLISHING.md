@@ -3,8 +3,10 @@
 The unscoped npm name `codex-subagents` is already taken. This project publishes as:
 
 ```text
-@fall-out-bug/codex-subagents
+@fall_out_bug/codex-subagents
 ```
+
+npm scopes are npm users or npm organizations, not GitHub repository owners. The GitHub repository is `fall-out-bug/codex-subagents`, but the npm user is `fall_out_bug`, so the publishable npm scope is `@fall_out_bug`.
 
 The CLI binaries remain:
 
@@ -15,7 +17,7 @@ codex-subagents
 
 ## npm
 
-The package is not published yet. As of May 12, 2026, `npm view @fall-out-bug/codex-subagents` returns `E404`.
+The package is not published yet. As of May 12, 2026, `npm view @fall_out_bug/codex-subagents` returns `E404`.
 
 ### The auth problem
 
@@ -33,7 +35,7 @@ Create a granular access token on npm:
 
 1. Open npmjs.com -> profile menu -> Access Tokens.
 2. Generate a new granular token.
-3. Give it `Read and write` package access for `@fall-out-bug/codex-subagents` or the `@fall-out-bug` scope.
+3. Give it `Read and write` package access for `@fall_out_bug/codex-subagents` or the `@fall_out_bug` scope.
 4. Enable `Bypass two-factor authentication` for write actions.
 5. Copy the token immediately; npm will not show it again.
 
