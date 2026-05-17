@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { cancelRun, startSubagent } from "../src/runner.js";
+import { cancelRun, runSubagent, startSubagent } from "../src/runner.js";
 import { readStatus } from "../src/registry.js";
 
 const tempRoots: string[] = [];
@@ -70,6 +70,26 @@ echo "finished"
     const status = await waitForStatus(cwd, result.id, "pass");
     expect(status.state).toBe("pass");
     expect(await readFile(status.resultPath, "utf8")).toContain("finished");
+  });
+
+  it("records timeout errors for foreground runs without exit codes", async () => {
+    const cwd = await tempProject();
+    const fakeBin = await fakeRuntime(cwd, "pi", `#!/usr/bin/env bash
+sleep 2
+`);
+
+    const result = await runSubagent({
+      runtime: "pi",
+      cwd,
+      task: "timeout task",
+      timeoutMs: 50,
+      pathPrefix: fakeBin
+    });
+
+    const status = await readStatus(cwd, result.id);
+    expect(status.state).toBe("fail");
+    expect(status.exitCode).toBeNull();
+    expect(status.error).toBe("Timed out after 50ms");
   });
 });
 

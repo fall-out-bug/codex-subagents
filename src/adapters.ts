@@ -15,7 +15,7 @@ function piToolsForProfile(profile?: string): string[] | undefined {
 export const piAdapter: RuntimeAdapter = {
   name: "pi",
   buildCommand(request: RunRequest): LaunchCommand {
-    const args = ["-p", "--no-context-files"];
+    const args = ["-p", "--no-session", "--no-context-files"];
 
     if (request.model) {
       args.push("--model", request.model);

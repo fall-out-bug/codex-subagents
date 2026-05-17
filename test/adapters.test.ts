@@ -19,6 +19,7 @@ describe("runtime adapters", () => {
     const command = adapterFor("pi").buildCommand(request({ profile: "readonly" }));
 
     expect(command.command).toBe("pi");
+    expect(command.args).toContain("--no-session");
     expect(command.args).toContain("--tools");
     expect(command.args).toContain("read,grep,find,ls");
   });

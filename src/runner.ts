@@ -46,6 +46,7 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
     const result = await execa(command.command, command.args, {
       cwd: request.executionCwd ?? request.cwd,
       env: envFor(command.env, options.pathPrefix),
+      stdin: "ignore",
       timeout: request.timeoutMs,
       reject: false,
       all: false
@@ -54,10 +55,18 @@ export async function runSubagent(options: RunOptions): Promise<{ id: string; st
     stdout = result.stdout;
     stderr = result.stderr;
     exitCode = result.exitCode ?? null;
+    const signal = result.signal ?? null;
+    if (result.timedOut) {
+      errorMessage = `Timed out after ${request.timeoutMs}ms`;
+    } else if (exitCode === null && signal) {
+      errorMessage = `Process terminated by signal ${signal}`;
+    } else if (exitCode === null) {
+      errorMessage = "Process ended without an exit code";
+    }
     await appendEvent(request.cwd, request.id, {
       type: "process.finished",
       message: `Finished ${command.command}`,
-      data: { exitCode }
+      data: { exitCode, signal, timedOut: result.timedOut }
     });
   } catch (error) {
     errorMessage = error instanceof Error ? error.message : String(error);
